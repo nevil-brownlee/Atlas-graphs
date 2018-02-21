@@ -1,6 +1,6 @@
 # 1605, Wed  7 Sep 2016 (NZDT)
 #
-# graph-state.py:  Examine stats file from build-stats.py
+# get-whois-info.py:  Looks up whois info for ASNs
 #
 # Copyright 2016, Nevil Brownlee,  U Auckland | RIPE NCC
 
