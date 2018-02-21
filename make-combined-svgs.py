@@ -264,6 +264,7 @@ for bn in range(c.target_bn_lo, c.target_bn_hi):
     call(na)
     b_et = timer()
     print("Bin %3d drawn, %.2f seconds" % (bn, b_et-b_st))
+    os.remove(dot_fn)
     #if bn == 3:  # Only draw first 4 bins
     #    break
 end_t = timer()
