@@ -15,8 +15,11 @@ from matplotlib import patches
 
 import math, datetime, os
 
-import msm_file as mf
 import config as c
+c.set_pp(True)  #  Use stats_* prune parameters
+print(">>> %s" % c.dgs_stem)
+
+import msm_file as mf
 
 start_time = c.start_time
 start_ymd = c.start_ymd
@@ -47,7 +50,7 @@ def plot_stacked(msm_objs, msm_dests, bn):
     tpt = []; tlabels = [] # depths patch tuples and colours
     for t in range(n_depths-1):
         r = n_depths-2 - t
-        print("  t=%d, r=%d" % (t, r))
+        #print("  t=%d, r=%d" % (t, r))
         tpt.append(patches.Patch(color=colours[r]))  #   %nc]))
         tlabels.append(depths[r])
     if len(msm_objs) <= 3:
@@ -59,7 +62,6 @@ def plot_stacked(msm_objs, msm_dests, bn):
     else:
         print("Can't plot more than 6 msm_ids <<<")
     fig, axes = pplt.subplots(rows, cols, figsize=(w,h))  # Inches (?)
-    print("type(axes)=%s, axes=%s" % (type(axes), axes))
 
     if len(msm_objs) < 6:  # ?? 
         pplt.subplots_adjust(left=0.155, bottom=None, right=None, top=0.9,
@@ -72,7 +74,6 @@ def plot_stacked(msm_objs, msm_dests, bn):
     #    start_time.strftime("%A %Y-%m-%d"), bn),
     #    fontsize=stp, horizontalalignment='center')
 
-    print("lem(msm_objs) = %d" % len(msm_objs))
     if len(msm_objs) == 1:
         leg = fig.legend(tpt, tlabels, "center right",
             bbox_to_anchor=(0.88,0.6), prop={"size":5}, handlelength=1)
@@ -93,14 +94,14 @@ def plot_stacked(msm_objs, msm_dests, bn):
 
     for f in range(rows*cols):
         print("--- f = %d" % f)
-        r = f/cols;  c = f%cols        
+        r = f/cols;  cl = f%cols        
         if rows == 1:
             if cols == 1:
                 xy1 = axes
             else:
-                xy1 = axes[c]
+                xy1 = axes[cl]
         else:
-            xy1 = axes[r,c]
+            xy1 = axes[r,cl]
             
         msm_obj = msm_objs[f]
         tbs = msm_obj.tbsa[0]
@@ -126,8 +127,8 @@ def plot_stacked(msm_objs, msm_dests, bn):
             alpha=0.8, linewidth=1, rwidth=0.8)
 
     #pplt.show()
-    pdf_fn = "%s/n+e-stacked-msm_ids-%d.svg" % (start_ymd, len(msm_objs))
-    pplt.savefig(pdf_fn)  # .svg gets % shown properly on OSX
+    plot_fn = "%s/%s-edges-per-depth-v-min-tr-pkts.svg" % (start_ymd, c.dgs_stem)
+    pplt.savefig(plot_fn)
 
 
 msm_objs = []

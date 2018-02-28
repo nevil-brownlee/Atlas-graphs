@@ -42,15 +42,16 @@ target_bn_lo = c.target_bn_lo;  target_bn_hi = c.target_bn_hi
 
 #mx_traces = 10000
 mx_traces = 0  # All traces
-print("write_stats=%s, raw_stats=%s, stats_fn=%s" % (
-    c.write_stats, c.raw_stats, c.stats_fn(c.msm_id)))
+
+c.set_pp(c.write_stats)  # Set prune parameters
+print("write_stats=%s, stats_fn=%s,\n                 graphs_fn=%s" % (
+    c.write_stats, c.stats_fn(c.msm_id), c.msm_graphs_fn(c.msm_id)))
 
 g_fn = c.msm_graphs_fn(c.msm_id)
 
+sf = None
 if c.write_stats:
     sf = open(c.stats_fn(c.msm_id), "w")
-else:
-    sf = None
 
 start_time = timezone('UTC').localize(c.start_time)  # Convert to UTC datetime
 start_t = start_time
@@ -130,10 +131,9 @@ for day in range(0,c.n_days):  #Read  RIPE Atlas for n_days days,
         else:
             continue  # Executed if the bline in zif executed normally
         break
-    
-if c.write_stats or c.raw_stats:
+
+if c.write_stats:
     sf.close()
-    c.reset_stats()
 
 df = open(g_fn, "w")
 print("??? end_dt = %s" % end_dt)

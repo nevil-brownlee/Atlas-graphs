@@ -1,3 +1,4 @@
+# 1608, Wed 28 Feb 2018 (NZDT)
 # 1355, Sun 12 Nov 2017 (SGT)
 # 0935, Fri 27 Oct 2017 (NZST)
 #
@@ -18,7 +19,6 @@ class AgParams:  # Atlas graph Parameters
         print("  -m or --msm_id      int  e.g. 5005")
         print("  -f or --full_graphs T/F  e.g. True")
         print("  -s or --write_stats T/F  e.g. False")
-        print("  -r or --raw_stats   T/F  e.g. False")
 
     def save_params(self):
         pf = open(self.params_fn, "w")
@@ -29,7 +29,6 @@ class AgParams:  # Atlas graph Parameters
         pf.write("msm_id = %d\n" % self.msm_id)
         pf.write("full_graphs = %s\n" % self.full_graphs)
         pf.write("write_stats = %s\n" % self.write_stats)
-        pf.write("raw_stats = %s\n" % self.raw_stats)
         pf.close()
 
     def __init__(self, dir):
@@ -41,7 +40,7 @@ class AgParams:  # Atlas graph Parameters
                 #   or first arg starting with '+'
                 ["start_ymd=", "start_hhmm=", "n_bins=", "n_days=",
                  "msm_nbr=",
-                 "full_graphs=", "write_stats=", "raw_stats=",
+                 "full_graphs=", "write_stats=",
                  "help"])
         except getopt.GetoptError as err:
             # print help information and exit:
@@ -52,7 +51,7 @@ class AgParams:  # Atlas graph Parameters
 
         self.start_ymd = self.start_hhmm = \
             self.msm_id = self.n_bins = self.n_days = \
-            self.write_stats = self.raw_stats = None
+            self.write_stats = None
 
         if os.path.isfile(self.params_fn):
             pf = open(self.params_fn, "r")  # Read last-use param values
@@ -72,8 +71,6 @@ class AgParams:  # Atlas graph Parameters
                     self.full_graphs = la[2][0] == "T"
                 elif la[0] == "write_stats":
                     self.write_stats = la[2][0] == "T"
-                elif la[0] == "raw_stats":
-                    self.raw_stats = la[2][0] == "T"
                 else:
                     print("Failed to parse file %s <<<" % self.params_fn)
                     exit()
@@ -82,7 +79,7 @@ class AgParams:  # Atlas graph Parameters
             self.start_ymd = "20171023";  self.start_hhmm = "0000"
             self.n_bins = 48;  self.n_days = 7;
             self.msm_id = 5005;  self.full_graphs = True
-            self.write_stats = False;  self.raw_stats = False
+            self.write_stats = False
             
         for o, a in opts:
             if o in ("-y", "--start_ymd"):
@@ -99,8 +96,6 @@ class AgParams:  # Atlas graph Parameters
                 self.full_graphs = a[0] == "T"
             elif o in ("-s", "--write_stats"):
                 self.write_stats = a[0] == "T"
-            elif o in ("-r", "--raw_stats"):
-                self.raw_stats = a[0] == "T"
             else:  # Option --help or 'not recognised'
                 self.usage();  exit()
         self.save_params()
@@ -114,13 +109,10 @@ class AgParams:  # Atlas graph Parameters
         return (self.start_ymd, self.start_hhmm, \
             self.msm_id, self.n_bins, self.n_days, \
             self.full_graphs, self.write_stats, \
-                self.raw_stats, self.rem_cpx)
+            self.rem_cpx)
 
 if __name__ == "__main__":
     agp = AgParams(".")
-    print("ymd=%s, hhmm=%s, n_bins=%d, n_days=%d, msm_id=%d, full=%s, statf=%s, raw=%s" % (
+    print("ymd=%s, hhmm=%s, n_bins=%d, n_days=%d, msm_id=%d, full=%s, statf=%s" % (
         agp.start_ymd, agp.start_hhmm, agp.n_bins, agp.n_days, agp.msm_id,
-        agp.full_graphs, agp.write_stats, agp.raw_stats))
-
-    if agp.raw_stats:  # Reset it to its default (False)
-        agp.raw_stats = False;  agp.save_params()  
+        agp.full_graphs, agp.write_stats))

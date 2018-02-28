@@ -1,6 +1,6 @@
 # 1117, Mon  9 Jan 2016 (NZDT)
 #
-# nodes+edges-v-prunepc.py: stats file -> n+e v prune % for all timebins
+# nodes+edges-v-min_tr_pkts.py: stats file -> n+e v prune  for all timebins
 #
 # Copyright 2016, Nevil Brownlee,  U Auckland | RIPE NCC
 
@@ -17,6 +17,8 @@ from matplotlib import pyplot as pplt
 import datetime, math, os
 
 import config as c
+c.set_pp(True)  #  Use stats_* prune parameters
+
 tb_mx_depth = c.stats_mx_depth+1  # mx_depth = mx hops back from dest
 start_ymd = c.start_ymd
 msm_dests = c.msm_dests
@@ -38,8 +40,8 @@ def plot_image(xy1, tp, tkp, lp, tbs_obj, title):
     else:
         xy1.set_xticks([20, 70, 120, 170, 220, 270])  # Others
         xy1.set_xlim([5, 310])
-        #xy1.set_ylim([0, 300])
-        #xy1.set_yticks(np.arange(0, 350, 50))
+        xy1.set_ylim([0, 800])
+        xy1.set_yticks(np.arange(50, 850, 100))
 
     xy1.tick_params(axis='x', labelsize=tkp)
     xy1.set_xlabel("min traceroute packets", fontsize=8, labelpad=3)
@@ -60,7 +62,7 @@ def plot_timebins(tbsa):  # First len(tbsa) plots for a single msm_id
     fig, axes = pplt.subplots(rows, cols, figsize=(9, 9))
     msm_id = tbsa[0].msm_id
     dest = msm_dests[msm_id][0]
-    fig.suptitle("Prune %%, %d:  %s, %s UTC" % (
+    fig.suptitle("Prune by min_tr_pkts:  %d (%s), %s UTC" % (
         msm_id, dest, c.start_time.strftime("%A %Y-%m-%d")),
         fontsize=stp, horizontalalignment='center')
     pplt.subplots_adjust(left=None, bottom=None, right=0.9, top=0.92,
@@ -71,7 +73,7 @@ def plot_timebins(tbsa):  # First len(tbsa) plots for a single msm_id
 
     for tbn, tbs_obj in enumerate(tbsa):
         bin_time = c.start_time + datetime.timedelta(0, 30*60) * tbn
-        r = int(tbn)/cols;  cl = tbn%cols
+        r = int(tbn/cols);  cl = tbn%cols
         xy1 = axes[r,cl]
         tbs_obj = tbsa[tbn]
         #print("tbn = %d, tbs_obj = %s" % (tbn, tbs_obj))
@@ -79,8 +81,8 @@ def plot_timebins(tbsa):  # First len(tbsa) plots for a single msm_id
         plot_image(xy1, tp, tkp, lp, tbs_obj, title)
 
     #pplt.show()
-    fn = "%s/%s.n+e-v-prunepc.svg" % (start_ymd, msm_id)
-    pplt.savefig(fn)  # .svg gets % shown properly on OSX
+    plot_fn = "%s/%s-n+e-v-min_tr_pkts-24bins.svg" % (start_ymd, c.dgs_stem)
+    pplt.savefig(plot_fn)
 
 
 def plot_single_bin(tbin, msm_a):  # Graphs for a list of msm_ids
@@ -116,10 +118,9 @@ def plot_single_bin(tbin, msm_a):  # Graphs for a list of msm_ids
         plot_image(xy1, tp, tkp, lp, tbs_obj, None)
 
     #pplt.show()
-    pdf_fn = "%s/n+e-v-prunepc-%d.svg" % (start_ymd, len(msm_a))
-    #pdf_fn = "%s/paper.n+e-v-prunepc.svg" % start_ymd
-    print("writing %s" % pdf_fn)
-    pplt.savefig(pdf_fn)  # .svg gets % shown properly on OSX
+    plot_fn = "%s/%s-n+e-v-min_tr_pkts.svg" % (start_ymd, c.dgs_stem)
+    print("writing %s" % plot_fn)
+    pplt.savefig(plot_fn)  # .svg gets % shown properly on OSX
 
 #for b in range(c.n_bins):
 #    bin_start = start_time + datetime.timedelta(0, 30*60) * b
@@ -128,8 +129,8 @@ def plot_single_bin(tbin, msm_a):  # Graphs for a list of msm_ids
 #    print("bin %02d, %s" % (b, bin_start.strftime("%Y-%m-%d")))
 
 n_bins = 24  # Nbr of bins to get data for
-#reqd_msm_ids = [5005]  #, 5005]
-reqd_msm_ids = None
+reqd_msm_ids = [5005]  # 4x6 array of plots for timebins 0-23
+#reqd_msm_ids = None  # Single plot for timebin 0
 
 msm_objs = []
 if reqd_msm_ids:
@@ -142,11 +143,11 @@ if reqd_msm_ids:
             mf_obj = mf.MsmFile(fn, n_bins)
             msm_objs.append(mf_obj)
     for msm_obj in msm_objs:
-        plot_timebins(msm_obj.tbsa)
+        plot_timebins(msm_obj.tbsa)  # Plot 4x6 array of timebins
 else:
     for msm_id in c.msm_nbrs:
         fn = c.stats_fn(msm_id)
-        print("fn = %s" % fn)
+        print("reqd fn = %s" % fn)
         if os.path.isfile(fn):
             print("stats_fn = %s" % fn)
             sa = fn.split("-");  mx_depth = int(sa[5])

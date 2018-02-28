@@ -19,21 +19,19 @@ import getparams as gp
 # f full_graphs    True      Work on/with full graphs (id = IP address)
 #                  False     Produce ASN-based graphs (id = ASN)
 # s write_stats    False     
-# r raw_stats      False     Use stats values for mx_depth and prune_pc
-#                              (i.e. override the values from msm_dests)
 
 dir = "."  # Base directory for RIPE graph files
 agp = gp.AgParams(dir)  # Get parameters
 
 start_ymd, start_hhmm, msm_id, n_bins, n_days, \
-    full_graphs, write_stats, raw_stats, rem_cpx = agp.param_values()
-print("ymd=%s, hhmm=%s, n_bins=%d, n_days=%d, msm_id=%d, full=%s, statf=%s, rawst=%s (rem_cpx=%d)" % (
+    full_graphs, write_stats, rem_cpx = agp.param_values()
+print("ymd=%s, hhmm=%s, n_bins=%d, n_days=%d, msm_id=%d, full=%s, statf=%s (rem_cpx=%d)" % (
     start_ymd, start_hhmm, n_bins, n_days, msm_id,
-    full_graphs, write_stats, raw_stats, rem_cpx))
+    full_graphs, write_stats, rem_cpx))
 
-def reset_stats():
-    agp.raw_stats = agp.write_stats = False
-    agp.save_params()  
+#def reset_stats():
+#    agp.raw_stats = agp.write_stats = False
+#    agp.save_params()  
 
 #start_time = datetime(2017, 2, 20, 0, 0)  # Monday, 20 Feb 2017 (UTC)
 start_time = datetime(int(start_ymd[0:4]), int(start_ymd[4:6]),
@@ -45,7 +43,7 @@ ds_stem = "%d-%s-%s" % (msm_id, start_ymd, ft_range)
 msm_nbrs = [5005, 5015, 5006, 5004, 5016, 5017]  # Decreasing nbr of edges
 
 msm_dests = {5017: ("ronin.atlas",7,0.5), 
-             5005: ("i.root",15,20),  # pp[2] of 80 is about 0.3%
+             5005: ("i.root",13,20),  # pp[2] of 80 is about 0.3%
              5006: ("m.root",7,0.5), 5015: ("h.root",7,0.5),
              5004: ("f.root",7,0.5), 5016: ("j.root",7,4.0)}
 
@@ -86,15 +84,34 @@ def gzm_gz_fn(st_ymd, msm_id):  # fn for gzm.gz file
 
 # build-graphs.py  config
 
-stats_mx_depth = 15;  stats_prune_pkts = 15
+stats_mx_depth = 15;  stats_min_tr_pkts = 10  # Prune parameters
 
-dname, mx_depth, prune_pc, p_pkts, prune_s = msm_pp(msm_id)  # From getparams
-if raw_stats:  # For graph-stats.py analysis
-    mx_depth = stats_mx_depth
-    prune_p = stats_prune_pkts;  p_pkts = True
-    prune_s = "%s" % prune_p
-dgs_info = "%d-%s" % (mx_depth, prune_s)
-    
+def set_pp(stats_file):  # True to use stats file instead of graphs file
+    global dname, mx_depth, prune_pc, p_pkts, prune_s, \
+        dgs_info, dgs_stem, node_fn, graphs_fn, asn_prefix
+        # Globals needed by functions (within config module)
+    dname, mx_depth, prune_pc, p_pkts, prune_s = msm_pp(msm_id)
+    if stats_file:  # For graph-stats.py analysis
+        mx_depth = stats_mx_depth
+        prune_p = stats_min_tr_pkts;  p_pkts = True
+        prune_s = "%s" % prune_p
+    dgs_info = "%d-%s" % (mx_depth, prune_s)
+
+    node_stem = "%s/nodes-%d-%s-%s-%d-%s" % (
+    start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+    # Must call set_pp to set mx_depth <<<<<<<<<<<<<<<<<
+
+    dgs_stem = "%d-%s-%s-%s" % (msm_id, start_ymd, ft_range, dgs_info)
+    if full_graphs:
+        graphs_fn = msm_graphs_fn(msm_id)  # graphs file (from traces file)
+        node_fn = node_stem + ".txt"
+        asn_prefix = asn_suffix = ""
+    else:  # ASN graphs
+        graphs_fn = msm_asn_graphs_fn(msm_id)  # asngraphs file (asn-filter.py)
+        dgs_stem += "-asn"
+        node_fn = node_stem + "-asn.txt"
+        asn_prefix = "asn-";  asn_suffix = "-asn"
+
 def msm_graphs_fn(msm_id):  # Depends on full_graphs !
     asn_s = "asn"
     if full_graphs:
@@ -139,20 +156,6 @@ def msm_asn_graphs_fn(msm_id):
 
 # make-combined-svgs.py
 
-node_stem = "%s/nodes-%d-%s-%s-%d-%s" % (
-    start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
-
-dgs_stem = "%d-%s-%s-%s" % (msm_id, start_ymd, ft_range, dgs_info)
-if full_graphs:
-    graphs_fn = msm_graphs_fn(msm_id)  # graphs file (from traces file)
-    node_fn = node_stem + ".txt"
-    asn_prefix = asn_suffix = ""
-else:  # ASN graphs
-    graphs_fn = msm_asn_graphs_fn(msm_id)  # asngraphs file (asn-filter.py)
-    dgs_stem += "-asn"
-    node_fn = node_stem + "-asn.txt"
-    asn_prefix = "asn-";  asn_suffix = "-asn"
-
 def draw_dir(msm_id):
     return "%s/%s-%sdrawings" % (start_ymd, msm_id, asn_prefix)
 
@@ -179,7 +182,8 @@ duration = n_bins*n_days/2  # Hours
 
 bgp_fn = "%s/bgp-%s.%02d.gz" % (start_ymd, bgp_time, duration)
 
-asn_fn = "%s/asns-%d-%s-%s-%d-%s.txt" % (
+def asn_fn():
+    return  "%s/asns-%d-%s-%s-%d-%s.txt" % (
         start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
 
 def asn_dests_fn(msm_id):
@@ -189,8 +193,9 @@ def asn_dests_fn(msm_id):
 
 # asn-stats.py
 
-whois_fn = "%s/whois-%d-%s-%s-%d-%s.txt" % (
-    start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+def whois_fn():
+    return "%s/whois-%d-%s-%s-%d-%s.txt" % (
+        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
 
 # make-html-slides.py
 
