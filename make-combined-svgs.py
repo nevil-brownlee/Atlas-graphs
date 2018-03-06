@@ -8,13 +8,14 @@
 
 import dgs_ld
 import timebins
-import ipp
 import sys, datetime, string, os.path, glob
 from subprocess import call
 import codecs
 import copy
 from timeit import default_timer as timer
+
 import config as c
+c.set_pp(False, c.msm_id)
 
 graphs_fn = c.msm_graphs_fn(c.msm_id)
 node_fn = c.node_fn
@@ -110,7 +111,6 @@ class Whole_Graph:
             if la[0] == "graph":
                 state = 1
             elif la[0] == "node":
-                #ASNname = ipp.from_s(la[1].strip('"'))
                 name = la[1].strip('"')
                 #print("la = ", la)
                 x = float(la[2]);  y = float(la[3])
@@ -198,14 +198,14 @@ wg.read_whole_graph(c.start_ymd, c.dgs_info)  # Read x,y node co-ords from plain
 no_asnf = no_whoisf = False
 print("c.asn_fn = %s\nc.whois_fn = %s" % (c.asn_fn, c.whois_fn))
 
-asn_fn = dgs_ld.find_usable_file(c.asn_fn)
+asn_fn = dgs_ld.find_usable_file(c.asn_fn())
 if asn_fn != '':
     print("Will use asn-file %s" % asn_fn)
 else:
     print("No asns file; run  pypy3 bulk-bgp-lookup.py <<<")
     no_asnf = True
 
-whois_fn = dgs_ld.find_usable_file(c.whois_fn)
+whois_fn = dgs_ld.find_usable_file(c.whois_fn())
 if whois_fn != '':
     print("Will use whois-file %s" % whois_fn)
 else:

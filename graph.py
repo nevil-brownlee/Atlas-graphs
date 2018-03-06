@@ -12,6 +12,8 @@ import ipp
 import sys, collections
 
 import config as c
+c.set_pp(False, c.msm_id)  # Set prune parameters
+
 
 debug_self_ref = False
 debug_test_loop = False

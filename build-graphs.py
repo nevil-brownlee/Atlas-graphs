@@ -18,6 +18,7 @@ from datetime import timedelta
 import gzip, os, string, re
 
 import config as c
+c.set_pp(False, c.msm_id)
 
 #print("%d traces read" % len(traces))
 #for n,t in enumerate(traces):
@@ -43,7 +44,6 @@ target_bn_lo = c.target_bn_lo;  target_bn_hi = c.target_bn_hi
 #mx_traces = 10000
 mx_traces = 0  # All traces
 
-c.set_pp(c.write_stats)  # Set prune parameters
 print("write_stats=%s, stats_fn=%s,\n                 graphs_fn=%s" % (
     c.write_stats, c.stats_fn(c.msm_id), c.msm_graphs_fn(c.msm_id)))
 

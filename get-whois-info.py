@@ -6,7 +6,6 @@
 
 import traceroute as tr
 import dgs_ld
-import ipp
 import config as c
 
 from ipwhois import IPWhois
@@ -149,8 +148,8 @@ class ASN:
                     break
         return 0
 
-af = open(c.asn_fn, "r")
-print("ASN stats for file %s" % c.asn_fn)
+af = open(c.asn_fn(), "r")
+print("Will write whois info file %s" % af)
 
 asn_d = {}
 
@@ -169,7 +168,7 @@ for k in asn_d:
     kv_list.append( (asn_d[k].count, asn_d[k]) )
 
 
-whoisf = open(c.whois_fn, "w", encoding='utf-8')
+whoisf = open(c.whois_fn(), "w", encoding='utf-8')
 n = 0
 for kv in sorted(kv_list, reverse=True):
     n += 1

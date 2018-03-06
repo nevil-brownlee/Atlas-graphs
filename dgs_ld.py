@@ -12,6 +12,7 @@ from subprocess import call
 import string, sys, glob  #, math
 
 import config as c
+c.set_pp(False, c.msm_id)  # Set prune parameters
 
 #               0        1      2         3         4
 colours = ['black', 'brown', 'red'

@@ -17,7 +17,7 @@ from matplotlib import pyplot as pplt
 import datetime, math, os
 
 import config as c
-c.set_pp(True)  #  Use stats_* prune parameters
+c.set_pp(True, c.msm_id)  #  Use stats_* prune parameters
 
 tb_mx_depth = c.stats_mx_depth+1  # mx_depth = mx hops back from dest
 start_ymd = c.start_ymd

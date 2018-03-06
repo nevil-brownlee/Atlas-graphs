@@ -16,7 +16,7 @@ from matplotlib import patches
 import math, datetime, os
 
 import config as c
-c.set_pp(True)  #  Use stats_* prune parameters
+c.set_pp(True, c.msm_id)  #  Use stats_* prune parameters
 print(">>> %s" % c.dgs_stem)
 
 import msm_file as mf

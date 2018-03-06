@@ -10,6 +10,7 @@ from radix import Radix
 from dgs_ld import find_usable_file
 
 import config as c
+c.set_pp(False, c.msm_id)  # Set prune parameters
 
 rtree=Radix()
 
@@ -40,7 +41,7 @@ else:
     print("No usable node file, run  pypy3 make-combined-svgs <<<")
     exit()
 
-print("will write asn_fn: %s" % c.asn_fn)
+print("will write asn_fn: %s" % c.asn_fn())
 n = 0
 with gzip.open(bgp_fn, 'rb') as zif:
     tb_n = 0;  tb = None
@@ -76,7 +77,7 @@ sys.stderr.write("Loaded %d lines" % n)
 node_f = open(c.node_fn, "r")
 ###node_f = open("20170220/no-asn-nodes-5005.txt", "r")
 
-asn_f = open(c.asn_fn, "w")
+asn_f = open(c.asn_fn(), "w")
 no_asn_nodes = {}
 for line in node_f:
     prefix = line.rstrip()  # Remove whitespace

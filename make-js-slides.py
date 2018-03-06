@@ -9,9 +9,11 @@
 
 import sys, glob, re
 
-import config as c
 import timebins
 from datetime import timedelta
+
+import config as c
+c.set_pp(False, c.msm_id)  # Set prune parameters
 
 start_dt = c.start_time.strftime("%Y-%m-%dT%H")
 end_time = c.start_time + timedelta(c.n_days)

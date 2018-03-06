@@ -1,8 +1,8 @@
-# 1031, Thu 26 Oct 2017 (NZST)
+# 1812, Sun  4 Mar 2018 (NZDT)
 #
 # config.py: configuration info for Nevil's Atlas graph programs
 #            
-# Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC
+# Copyright 2018, Nevil Brownlee,  U Auckland | RIPE NCC
 
 import string, os
 from datetime import datetime
@@ -19,6 +19,12 @@ import getparams as gp
 # f full_graphs    True      Work on/with full graphs (id = IP address)
 #                  False     Produce ASN-based graphs (id = ASN)
 # s write_stats    False     
+
+# Python note:
+# This is a module; importing it (essentially) creates a single class instance.
+# set_pp(stats_file, msm_id) picks up msm_id's prune parameters, then
+# sets global (to module) variables/functions so that programs using this 
+# module can see them.
 
 dir = "."  # Base directory for RIPE graph files
 agp = gp.AgParams(dir)  # Get parameters
@@ -50,6 +56,7 @@ msm_dests = {5017: ("ronin.atlas",7,0.5),
 msm_instances = {5017: 1, 5005: 50, 5006: 8, 5015: 2, 5004: 58, 5016: 127}
 
 def msm_pp(msm):  # Prune parameters
+
     pp = msm_dests[msm]
     p_pkts = isinstance(pp[2], int)  # True if pp[2] is an int
     if p_pkts:
@@ -86,9 +93,9 @@ def gzm_gz_fn(st_ymd, msm_id):  # fn for gzm.gz file
 
 stats_mx_depth = 15;  stats_min_tr_pkts = 10  # Prune parameters
 
-def set_pp(stats_file):  # True to use stats file instead of graphs file
+def set_pp(stats_file, msm_id):  # True to use stats file instead of graphs file
     global dname, mx_depth, prune_pc, p_pkts, prune_s, \
-        dgs_info, dgs_stem, node_fn, graphs_fn, asn_prefix
+        dgs_info, dgs_stem, node_fn, graphs_fn, asn_prefix, asn_suffix
         # Globals needed by functions (within config module)
     dname, mx_depth, prune_pc, p_pkts, prune_s = msm_pp(msm_id)
     if stats_file:  # For graph-stats.py analysis
