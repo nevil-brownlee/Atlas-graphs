@@ -475,10 +475,10 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
         which = "percent"
     if not c.full_graphs:
         title = "ASN graph: edge presence (%s)" % which
-        pfn = "inter-asn-%s.svg" % which
+        pfn = "%/inter-asn-%s.svg" % (c.start_ymd, which)
     else:
         title = "Full graph: edge presence (%s)" % which
-        pfn = "inter-asn-full-%s.svg" % which
+        pfn = "%s/inter-asn-full-%s.svg" % (c.start_ymd, which)
 
     if len(ids) == 1:
         rows = cols = 1;  lw = 0.2
@@ -553,7 +553,9 @@ def plot_edge_presence(pv_eca, group, first_ix, e_labels):  # List of edges to p
     #n_edges = 6; w = 10;  h = 2.5;  stp = 9;  tkp = 8;  tp = 12
     print("n_bins=%d, n_edges=%d, group = %s\n" % (n_bins, n_edges, group))
     fig, xy = pplt.subplots(1,1, figsize=(w,h))  # Inches (?)
-    ##fig.suptitle(title, fontsize=18, horizontalalignment='center')
+    msm_dest = c.msm_dests[c.msm_id]
+    title = "'%s'  edges for %d (%s)" % (group, c.msm_id, msm_dest[0])
+    fig.suptitle(title, fontsize=18, horizontalalignment='center')
     print("axes = %s, shape(axes) = %s" % (xy, np.shape(xy)))
     xv = np.concatenate(([0], np.cumsum(np.ones(n_bins-1))))
     xy.tick_params(axis='x', labelsize=tkp)
@@ -611,7 +613,7 @@ def plot_edge_presence(pv_eca, group, first_ix, e_labels):  # List of edges to p
         #          bbox_to_anchor=(0.03,0.99), prop={"size":7}, handlelength=1)
         #    # fontsize for labels, "size" for heading
         xy.grid()
-    pfn = "%s-presence--%d.svg" % (group, first_ix)
+    pfn = "%s/%s-presence-%03d.svg" % (c.start_ymd, group, first_ix)
     pplt.savefig(pfn)
    
 #  The code that looks for 'interesting' groups uses all_edges;
@@ -671,7 +673,7 @@ for msm_id in [c.msm_id]:  #!! Kludge so we don't change indenting below!
         ax = pplt.gca()
         pplt.tight_layout(w_pad=5.0)  # Width padding 5x font size
             # Only one plot, so h_pad (height padding) isn't used
-        pfn = "dendro-%d.svg" % msm_id
+        pfn = "%s/dendro-%d.svg" % (c.start_ymd, msm_id)
         #pplt.show()
         pplt.savefig(pfn)
 

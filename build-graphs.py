@@ -18,7 +18,8 @@ from datetime import timedelta
 import gzip, os, string, re
 
 import config as c
-c.set_pp(False, c.msm_id)
+c.set_pp(c.write_stats, c.msm_id)
+# Use stats_* prune params for graph and stats files
 
 #print("%d traces read" % len(traces))
 #for n,t in enumerate(traces):
