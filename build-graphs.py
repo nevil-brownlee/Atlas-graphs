@@ -45,9 +45,10 @@ target_bn_lo = c.target_bn_lo;  target_bn_hi = c.target_bn_hi
 #mx_traces = 10000
 mx_traces = 0  # All traces
 
+
+
 print("write_stats=%s, stats_fn=%s,\n                 graphs_fn=%s" % (
     c.write_stats, c.stats_fn(c.msm_id), c.msm_graphs_fn(c.msm_id)))
-
 g_fn = c.msm_graphs_fn(c.msm_id)
 
 sf = None
@@ -101,8 +102,9 @@ for day in range(0,c.n_days):  #Read  RIPE Atlas for n_days days,
                 b_traces += nt
 
             block_nbr += 1
-            if block_nbr < 10:  # 10 blocks of probes for each timebin
-                continue
+            if c.start_ymd >= "20171001" and block_nbr < 10:
+                # Datasets earlier than Nov 2017 used _all_ probes!
+                continue  # 10 blocks of probes for each timebin
             else:  # End of this bin
                 print("Day %d, timebin %d, %d Traces read" % (
                     day, f_tb_n, b_traces))
