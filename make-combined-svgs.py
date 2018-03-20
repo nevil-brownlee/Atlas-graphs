@@ -209,7 +209,7 @@ whois_fn = dgs_ld.find_usable_file(c.whois_fn())
 if whois_fn != '':
     print("Will use whois-file %s" % whois_fn)
 else:
-    print("No whois file; run  pypy3 asn-stats.py <<<")
+    print("No whois file; run  pypy3 get-whois-info.py <<<")
     no_whoisf = True
 if no_asnf or no_whoisf:
     exit()
