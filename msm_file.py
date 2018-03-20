@@ -87,16 +87,13 @@ class TbStats:
         self.bn = bn;  self.msm_id = msm_id
         self.ra = []  # Roots in this timebin
         if len(self.prune_pkts) == 0:
-            if msm_id == 5016:  # prune_pc values for pam-2014 paper <<<
-                for n in range(self.n_prune_pkts):  # 0.2 to 4.0 for 5016 (j.root)
-                    self.prune_pcs.append(0.2+n*0.2)
+            if msm_id == 5016:  # prune_pkts values for RIPE paper <<<
+                for n in range(self.n_prune_pkts):  # 0.05 to 0.54 for others
+                    self.prune_pkts.append(8+n*10)  # [10,60]
+                #print("5016 prune_pkts = %s" % self.prune_pkts)
             else:
-                ##for n in range(self.n_prune_pcs):  # 0.2 to 1.2 for others
-                ##    self.prune_pcs.append(0.2+n*0.05)
-                #for n in range(self.n_prune_pcs):  # 0.05 to 0.54 for others
                 for n in range(self.n_prune_pkts):  # 0.05 to 0.54 for others
                     self.prune_pkts.append(8+n*6)  # [10,60]
-                #print("prune_pkts = %s" % self.prune_pkts)
 
     def set_TbRoots(self, prune_pkts, mx_tr_pkts):
         TbStats.prune_pkts = float(prune_pkts)
