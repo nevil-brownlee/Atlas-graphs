@@ -531,9 +531,10 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
         print("ymax = %s" % ymax)
         xy.set_ylim(-2,ymax)  # y axis limits
         if len(ids) != 1:
-            xy.plot(xy, pcc[f], label="Same ASN")
+            x_vals = np.linspace(0,48,49)
+            xy.plot(x_vals, pcc[f], label="Same ASN")  # <<<<<<<<<<<<
             print("  same AS: %s" % pcc[f])
-            xy.plot(xy, inter_cc[f], label="Inter-ASN")
+            xy.plot(x_vals, inter_cc[f], label="Inter-ASN")
             print("  inter-AS: %s" % inter_cc[f])
         else:
             xy.plot(pcc[0], label="Same ASN")
@@ -620,8 +621,22 @@ def plot_edge_presence(pv_eca, group, first_ix, e_labels):  # List of edges to p
 #    that's global above, and built by the NodeInfo class.
 
 ids = [];  pca = [];  inter_ca = [];  all_edges = []
-for msm_id in [c.msm_id]:  #!! Kludge so we don't change indenting below!
+#for msm_id in [c.msm_id]:  #!! Kludge so we don't change indenting below!
 #for msm_id in [5017, 5005, 5016, 5004, 5006, 5015]:
+
+if e_per_asn:
+    for msm_id in [5017, 5005, 5016]:
+        msm_dest = c.msm_dests[msm_id][0]
+        gf = GraphInfo(msm_id, all_edges)
+    
+        print("%d has %d nodes with no asn <--" % (msm_id, len(no_asn_nodes)))
+        ids.append(msm_id)
+        same_counts, inter_counts = gf.asn_edges()
+        pca.append(same_counts);  inter_ca.append(inter_counts)
+    plot_asn_counts(pca, inter_ca, ids)  # Inter- Same-AS Edge comparisons
+    exit()
+
+for msm_id in [5017, 5005, 5016]:
     msm_dest = c.msm_dests[msm_id][0]
     gf = GraphInfo(msm_id, all_edges)
     
