@@ -88,10 +88,6 @@ def plot_stacked(msm_objs, msm_dests, bn):
                    bbox_to_anchor=(0.98,0.5), prop={"size":7}, handlelength=1)
     #leg = fig.legend()
     
-    elo = 17;  ehi = 2200
-    xlo = math.log(elo)/math.log(10)
-    xhi = math.log(ehi)/math.log(10)
-
     for f in range(rows*cols):
         print("--- f = %d" % f)
         r = f/cols;  cl = f%cols        
@@ -109,14 +105,26 @@ def plot_stacked(msm_objs, msm_dests, bn):
         title = "%d: %s" % (msm_id, dest)
         xy1.set_title("%s" % title, fontsize=tp)
  
-        xy1.set_xlim([elo, ehi])
         xy1.set_xscale('log')
         xy1.tick_params(axis='x', labelsize=tkp)
-        xy1.set_xticks([20, 80, 320, 1280])
-        xy1.set_xticklabels(['20', '80', '320', '1280'])
         xy1.set_xlabel("tr packets", fontsize=tkp, labelpad=2)
 
-        xy1.set_ylim([0.1, 92])
+        if msm_id == 5005:
+            elo = 17;  ehi = 2200
+            xlo = math.log(elo)/math.log(10)
+            xhi = math.log(ehi)/math.log(10)
+            xy1.set_xlim([elo, ehi])
+            xy1.set_xticks([20, 80, 320, 1280])
+            xy1.set_xticklabels(['20', '80', '320', '1280'])
+            xy1.set_ylim([0.1, 99])
+        else:
+            elo = 75;  ehi = 2200
+            xlo = math.log(elo)/math.log(10)
+            xhi = math.log(ehi)/math.log(10)
+            xy1.set_xlim([elo, ehi])
+            xy1.set_xticks([80, 320, 1280])
+            xy1.set_xticklabels(['80', '320', '1280'])
+            xy1.set_ylim([0.1, 12.25])
         xy1.tick_params(axis='y', labelsize=tkp)
         xy1.set_ylabel("Edges", fontsize=tkp, labelpad=2)
         #print("shape(tb_tr_pkts) = %s" % np.shape(tbs.tb_tr_pkts))
@@ -132,8 +140,9 @@ def plot_stacked(msm_objs, msm_dests, bn):
 
 
 msm_objs = []
-for msm_id in [5005]:
+#for msm_id in [5005]:
 #for msm_id in c.msm_nbrs:
+for msm_id in [5017, 5005, 5016]:
     fn = c.stats_fn(msm_id)
     #print("msm_id = %d, fn = %s" % (msm_id, fn))
     if os.path.isfile(fn):
