@@ -48,10 +48,12 @@ ds_stem = "%d-%s-%s" % (msm_id, start_ymd, ft_range)
 
 msm_nbrs = [5005, 5015, 5006, 5004, 5016, 5017]  # Decreasing nbr of edges
 
-msm_dests = {5017: ("ronin.atlas",7,0.5), 
+msm_dests = {5017: ("ronin.atlas",13,20), 
              5005: ("i.root",13,20),  # pp[2] of 80 is about 0.3%
-             5006: ("m.root",7,0.5), 5015: ("h.root",7,0.5),
-             5004: ("f.root",7,0.5), 5016: ("j.root",7,4.0)}
+             5016: ("j.root",13,20),
+             5006: ("m.root",13,20),
+             5015: ("h.root",13,20),
+             5004: ("f.root",13,20) }
 
 msm_instances = {5017: 1, 5005: 50, 5006: 8, 5015: 2, 5004: 58, 5016: 127}
 
