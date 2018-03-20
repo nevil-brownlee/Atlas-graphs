@@ -32,16 +32,22 @@ def plot_image(xy1, tp, tkp, lp, tbs_obj, title):
         title = "%d: %s" % (msm_id, dest)
     xy1.set_title("%s" % title, fontsize=tp)
 
-    if msm_id == 5016:
-        xy1.set_xticks([0.2, 0.9, 1.6, 2.4, 3.2, 4.0])  # 5016
-        xy1.set_xlim([0.18, 4.2])
-        xy1.set_ylim([0, 470])
-        xy1.set_yticks(np.arange(0, 500, 50))
-    else:
+    if msm_id == 5017:
+        xy1.set_xticks([120, 160, 200, 240, 280])  # Others
+        xy1.set_xlim([105, 310])
+        xy1.set_ylim([0, 165])
+        xy1.set_yticks(np.arange(20, 160, 20))
+        pass
+    elif msm_id == 5005:
         xy1.set_xticks([20, 70, 120, 170, 220, 270])  # Others
         xy1.set_xlim([5, 310])
         xy1.set_ylim([0, 800])
         xy1.set_yticks(np.arange(50, 850, 100))
+    elif msm_id == 5016:
+        xy1.set_xticks([60, 160, 260, 360, 460])
+        xy1.set_xlim([55, 520])
+        xy1.set_ylim([0, 125])
+        xy1.set_yticks(np.arange(20, 140, 20))
 
     xy1.tick_params(axis='x', labelsize=tkp)
     xy1.set_xlabel("min traceroute packets", fontsize=8, labelpad=3)
@@ -128,9 +134,9 @@ def plot_single_bin(tbin, msm_a):  # Graphs for a list of msm_ids
 #    print("bin %02d, %s" % (b, bin_start.strftime("%H%M")))
 #    print("bin %02d, %s" % (b, bin_start.strftime("%Y-%m-%d")))
 
-n_bins = 24  # Nbr of bins to get data for
-reqd_msm_ids = [5005]  # 4x6 array of plots for timebins 0-23
-#reqd_msm_ids = None  # Single plot for timebin 0
+#reqd_msm_ids = [5005];  n_bins = 24  # 4x6 array of plots for timebins 0-23
+#reqd_msm_ids = c.msm_ids;  n_bins = 6  # Six msm_ids in config.c
+reqd_msm_ids = [5017, 5005, 5016];  n_bins = 1  # msm_ids for paper diagram
 
 msm_objs = []
 if reqd_msm_ids:
@@ -142,8 +148,12 @@ if reqd_msm_ids:
             print("Stats report for file %s, mx_depth = %d" % (fn, mx_depth))
             mf_obj = mf.MsmFile(fn, n_bins)
             msm_objs.append(mf_obj)
-    for msm_obj in msm_objs:
-        plot_timebins(msm_obj.tbsa)  # Plot 4x6 array of timebins
+    print("msm_objs = %s" % msm_objs)
+
+    #for msm_obj in msm_objs:
+    #    #plot_timebins(msm_obj.tbsa)  # Plot 4x6 array of timebins
+    #    plot_single_bin(0, msm_objs)  # Plot only bin  0
+    plot_single_bin(0, msm_objs)  # Plot only bin  0
 else:
     for msm_id in c.msm_nbrs:
         fn = c.stats_fn(msm_id)
