@@ -8,6 +8,7 @@
 
 import numpy as np
 from scipy.cluster.hierarchy import linkage, leaves_list, dendrogram
+#from scipy.cluster.hierarchy import optimal_leaf_ordering
 import matplotlib.pyplot as pplt
 
 import math, sys
@@ -383,7 +384,7 @@ class GraphInfo:
         t_p = {  # Parameters for type testing for 336 bins
             'n_ones': int(24*sf), 'mx_orun': int(12*sf),
             'n_oruns': 2, 'n_zruns': 2,
-            'n_ones_i1': int(96*sf),
+            'n_ones_i1': int(72*sf),
             'n_ones_seldom': int(48*sf), 'n_ones_mostly':int(240*sf),
             }
         print("ones: i1=%d, seldom=%d, mostly=%d" % (t_p['n_ones_i1'],
@@ -547,8 +548,8 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
     pplt.savefig(pfn)
 
 def plot_edge_presence(pv_eca, group, first_ix, e_labels):  # List of edges to plot presence
-    # plot the first 10 edges for now
-    n_edges = 40; w = 10;  h = 16;  stp = 9;  tkp = 8;  tp = 12
+    #n_edges = 40; w = 10;  h = 16;  stp = 9;  tkp = 8;  tp = 12
+    n_edges = len(pv_eca); w = 10;  h = 16;  stp = 9;  tkp = 8;  tp = 12
     if len(pv_eca) <= 22:
         n_edges = len(pv_eca);  h = n_edges*0.43
     #n_edges = 6; w = 10;  h = 2.5;  stp = 9;  tkp = 8;  tp = 12
@@ -599,8 +600,10 @@ def plot_edge_presence(pv_eca, group, first_ix, e_labels):  # List of edges to p
         ymin = np.ones(336)*offset
         ymax = np.add(e.present, offset)
         if not e_labels:            
-            nn = "%s -> %s %2d %5d pkts  %3d" % (
-                e.asn_from, e.asn_to, e.n_zruns, e.av_icount, f)
+            #nn = "%s -> %s  %5d pkts  %3d" % (
+            #    e.asn_from, e.asn_to, e.av_icount, f)
+            nn = "%s->%s   (%s->%s)  %5d pkts" % (
+                e.asn_from, e.asn_to, e.n_from, e.n_to, e.av_icount)
         else:
             nn = e_labels[f]
         print("%s, %s->%s, first 0 at %d to %d" % (
@@ -613,8 +616,9 @@ def plot_edge_presence(pv_eca, group, first_ix, e_labels):  # List of edges to p
         #xy.legend(loc="upper left", title="Edge type", fontsize=5,
         #          bbox_to_anchor=(0.03,0.99), prop={"size":7}, handlelength=1)
         #    # fontsize for labels, "size" for heading
-        xy.grid()
-    pfn = "%s/%s-presence-%03d.svg" % (c.start_ymd, group, first_ix)
+        #xy.grid()
+    pfn = "%s/%d-%s-presence-%d.svg" % (
+        c.start_ymd, c.msm_id, group, first_ix)
     pplt.savefig(pfn)
    
 #  The code that looks for 'interesting' groups uses all_edges;
@@ -672,7 +676,7 @@ for msm_id in [5017, 5005, 5016]:
 
     print("= = = = =")
     
-    def plot_dendrogram(Z, eva_labels):
+    def plot_dendrogram(Z, eva_labels, group):
         pplt.figure(figsize=(6, 8))
         which = "%d (%s)" % (msm_id, c.msm_dests[msm_id][0])
         t = "RIPE Atlas Edges, single-link dendrogram for %s" % which
@@ -683,17 +687,18 @@ for msm_id in [5017, 5005, 5016]:
             orientation='right',  # Root at the right
             #leaf_rotation=90.0,  # rotates the x axis labels
             labels=eva_labels,
-            leaf_font_size=5.0  # font size for the x axis labels
-        )
+            leaf_font_size=5.0,   # font size for the x axis labels
+            distance_sort='ascending')
         ax = pplt.gca()
         pplt.tight_layout(w_pad=5.0)  # Width padding 5x font size
             # Only one plot, so h_pad (height padding) isn't used
-        pfn = "%s/dendro-%d.svg" % (c.start_ymd, msm_id)
+        pfn = "%s/%d-dendro-%s.svg" % (c.start_ymd, msm_id, group)
         #pplt.show()
         pplt.savefig(pfn)
 
-#    def e_name(x):
-#        ix = int(x)
+    def e_name(x):
+        ix = int(x)
+        return "<%d>" % ix
 #        if ix > len(eva)-1:
 #            return "<%d>" % ix
 #        return eva_labels[ix]
@@ -715,6 +720,7 @@ for msm_id in [5017, 5005, 5016]:
     e_info = []
     def ev_dist(pv1, pv2):  # Distance metric for clustering
         dist = np.sum(pv1 != pv2)  # Different
+        return dist
         dist2 = np.sum(pv1 != np.logical_not(pv2))  # Present in gaps
         if dist2 < dist:
             return dist2
@@ -736,7 +742,7 @@ for msm_id in [5017, 5005, 5016]:
         print("mx_olap: rows %d & %d = %d" % (int(pv1[0]),int(pv2[0]), mx_olap))
         return (n_bins-mx_olap) + dist*20
 
-    def make_edges_list(edges):
+    def make_edges_list(edges, group):
         eva = []  # 2d array of observation vectors
 #        eva_labels = []  # Labels for each edge
         eva_asns = []  # ASNs for each edge
@@ -755,33 +761,45 @@ for msm_id in [5017, 5005, 5016]:
         Z = linkage(eva, method='single', metric=ev_dist)  #'euclidean')
         print("\neva has %d edges, there were %d iterations" % (
             len(eva), len(Z)))
-#    for r in range(0, len(Z)):
-#        print("r=%d, <%d,%d> %s + %s ==> %s,  dist %.3f, (row %d in Z matrix)" % (r, Z[r,0], Z[r,1],
-#            e_name(Z[r,0]), e_name(Z[r,1]), e_name(n+r), Z[r,2], Z[r,3]))
-#        print("   ASNs  %s --> %s" % (e_asns(Z[r,0]), e_asns(Z[r,1])))
-        dendro_order = leaves_list(Z)
-        print("DO = %s" % dendro_order)
-        pv_rec_d = []
-        for j in range(0,len(dendro_order)):
-            if j == 0:
-                this_ix = dendro_order[j]
-                print("%3d:  %s" %(j, eva_asns[this_ix]))
-            else:
-                last_ix = this_ix  # From last cycle
-                this_ix = dendro_order[j]
-                print("%3d: diff %s  %s" %(j,
-                    ev_dist(eva[last_ix], eva[this_ix]),
-                            eva_asns[this_ix]))
-            pv_rec_d.append(edges[this_ix])
+#        for r in range(0, len(Z)):
+#            print("r=%d, <%d,%d> %s + %s ==> %s,  dist %.3f, (row %d in Z matrix)" % (r, Z[r,0], Z[r,1],
+#                    e_name(Z[r,0]), e_name(Z[r,1]), e_name(n+r), Z[r,2], Z[r,3]))
+#            print("   ASNs  %s --> %s" % (e_asns(Z[r,0]), e_asns(Z[r,1])))
 
-        plot_dendrogram(Z, eva_asns)
+# Z[i, 0] and Z[i, 1] are combined to form cluster n + i.
+# index less than n corresponds to one of the original observations.
+# distance between clusters Z[i, 0] and Z[i, 1] is given by Z[i, 2]. 
+# fourth value Z[i, 3] = number of original observations in the new cluster.
+        n = len(eva)
+        #for r in range(0, len(Z)):
+        #    original = ''
+        #    if r > n:
+        #        original = '*'
+        #    print("r=%d, <%d,%d>   dist %.3f, (%d original observations) %s" % (
+        #        r, Z[r,0], Z[r,1],
+        #        Z[r,2], Z[r,3], original))
+        #dendro_order = leaves_list(Z)
+        #print("DO = %s" % dendro_order)
+        diff_order = []
+        for j in range(len(eva)-1):
+            e0 = int(Z[j,0]);   e1 = int(Z[j,1])
+            if e0 < n and e0 not in diff_order:
+                diff_order.append(e0)
+            if e1 < n and not e1 in diff_order:
+                diff_order.append(e1)
+        print("diff_order=%s, len(diff_order)=%d" % (
+            diff_order, len(diff_order)))
+        pv_rec_d = []
+        for j in range(0,len(diff_order)):
+            this_ix = diff_order[j]
+            pv_rec_d.append(edges[this_ix])
         return pv_rec_d
 
     if e_presence:
-        edges = make_edges_list(interest1)
+        edges = make_edges_list(interest1, "interest1")
         plot_edge_presence(edges, "interest1", 0, None)
-        #edges = make_edges_list(recurrent)
-        #plot_edge_presence(edges, "recurrent", 0, None)
+        edges = make_edges_list(recurrent, "recurrent")
+        plot_edge_presence(edges, "recurrent", 0, None)
     
     ## https://docs.scipy.org/doc/scipy/reference/cluster.hierarchy.html
     
