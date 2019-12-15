@@ -9,7 +9,11 @@
 
 import traceroute as tr
 import timebins
+<<<<<<< HEAD
 import read_atlas_gz, read_yaml_gz
+=======
+import read_atlas_gz
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 import graph
 import dgs_ld
 
@@ -45,6 +49,7 @@ target_bn_lo = c.target_bn_lo;  target_bn_hi = c.target_bn_hi
 #mx_traces = 10000
 mx_traces = 0  # All traces
 
+<<<<<<< HEAD
 print("write_stats=%s, stats_fn=%s,\n                 graphs_fn=%s" % (
     c.write_stats, c.stats_fn(c.msm_id), c.msm_graphs_fn(c.msm_id)))
 
@@ -55,6 +60,17 @@ if c.write_stats:  # Stats file uses lowest pruning values
 
 g_fn = c.msm_graphs_fn(c.msm_id)
 print("graphs fn = %s" % g_fn)
+=======
+
+
+print("write_stats=%s, stats_fn=%s,\n                 graphs_fn=%s" % (
+    c.write_stats, c.stats_fn(c.msm_id), c.msm_graphs_fn(c.msm_id)))
+g_fn = c.msm_graphs_fn(c.msm_id)
+
+sf = None
+if c.write_stats:
+    sf = open(c.stats_fn(c.msm_id), "w")
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 start_time = timezone('UTC').localize(c.start_time)  # Convert to UTC datetime
 start_t = start_time
@@ -63,19 +79,41 @@ print("start_time = %s" % start_time.strftime('%X %x %Z'))
 start_ymd = start_time.strftime("%Y%m%d")
 succa = [];  bga = [];  n_traces  = 0  # Total number of traces!
 start_dt = end_dt = None
+<<<<<<< HEAD
 
 def read_json_file(zif, start_dt, tb_n, f_tb_n):
     n_traces = 0
     while True:  # Step through bins in this file
+=======
+for day in range(0,c.n_days):  #Read  RIPE Atlas for n_days days,
+                        # make a complete list of BinGraphs in bga[]
+    #if day != 0:  # Only do first day
+    #    break
+    start_t = start_time + timedelta(seconds=1800)*day*c.n_bins
+    start_ymd = start_t.strftime("%Y%m%d")
+    fn_gzm_gz = c.gzm_gz_fn(start_ymd, c.msm_id)
+    tb_n = day*c.n_bins  # Starting bin nbr for this day's file
+    print("$$$ starting day %d, fn_gzm_txt %s, from bin %d" % (
+        day, fn_gzm_gz, tb_n))
+    
+    f_tb_n = 0  # tb within this file
+    print("Starting file for day %d (%s)" % (day, start_ymd))
+    with gzip.open(fn_gzm_gz, 'rb') as zif:  # Step through bins in this file
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         tb = None
         block_nbr = b_traces = b_empty_traces = b_too_short_traces = 0
         for b_line in zif:
             line = b_line.decode('ascii')
+<<<<<<< HEAD
             ##print("*** %s" % line)
+=======
+            #print("*** %s" % line)
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             if line[0] == '#':  # Comment
                 ls = line.rstrip()
                 if re.match(r'^#Input header', ls):  # Get start and end times
                     lsa = ls.split()
+<<<<<<< HEAD
                     ##print("lsa = >%s<" % lsa)
                     if not start_dt:
                         start_dt = lsa[3]
@@ -91,6 +129,20 @@ def read_json_file(zif, start_dt, tb_n, f_tb_n):
                 # Read the Trees into tb.bins[f_tb_n]
                 nt, dest, empty_traces, too_short_traces = \
                     read_atlas_gz.read_tr_file(tb, f_tb_n, line, mx_traces)
+=======
+                    if not start_dt:
+                        start_dt = lsa[3]
+                    edt = lsa[5];  end_dt = edt[:-1]
+                    tb = timebins.TimeBins(lsa[3], end_dt)
+                    print("tb = %s, end_dt = %s" % (tb, end_dt))
+                continue
+
+            if (tb_n >= target_bn_lo) and (tb_n <= target_bn_hi):
+                #  timebin tb is in range (of whole dataset)
+                nt, dest, empty_traces, too_short_traces = \
+                    read_atlas_gz.read_tr_file(tb, f_tb_n, line, mx_traces)
+                    # Read the Trees into tb.bins[f_tb_n]
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                 b_empty_traces += empty_traces
                 b_too_short_traces += too_short_traces
                 b_traces += nt
@@ -119,13 +171,18 @@ def read_json_file(zif, start_dt, tb_n, f_tb_n):
                     tb_n, t_succ*100.0/t_traces, t_succ, t_traces))
                 tb.bins[f_tb_n] = None  # Finished with bin f_tb_n
                 n_traces += b_traces
+<<<<<<< HEAD
                 b_traces = block_nbr = b_empty_traces = b_too_short_traces = 0
+=======
+                b_traces = block_nbr = b_empty_traces = b_too_short_traces =0
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                 tb_n += 1;  f_tb_n += 1
 
                 #break  # Only do one bin  (break inner loop)
                 #if f_tb_n > 1:  # Only do 2 timebins (for each day)
                 #    break
         else:
+<<<<<<< HEAD
             print("Reached EOF on zip file")
             break  # Executed if 'b_line in zif' loop executed normally
         break  # Break the 'while True' loop
@@ -165,6 +222,10 @@ for day in range(0,c.n_days):  #Read  RIPE Atlas for n_days days,
         print("start_dt %s, end_dt %s (%d timebins)" % (
             start_dt, end_dt, len(bga)))
 
+=======
+            continue  # Executed if the bline in zif executed normally
+        break
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 if c.write_stats:
     sf.close()

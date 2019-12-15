@@ -111,8 +111,12 @@ for day in range(0,c.n_days):  #Read  RIPE Atlas for n_days days
 
     of.close()
     print("time now = %s" % datetime.now())
+<<<<<<< HEAD
     if (b != c.n_bins-1):
         print("**** Didn't get trace data for all %d bins ****" % c_n_bins)
+=======
+
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
     fn_gzm_gz = c.gzm_gz_fn(start_ymd, c.msm_id)
     print("zipping to %s" % fn_gzm_gz)

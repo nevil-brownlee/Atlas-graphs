@@ -198,8 +198,6 @@ def cleanup_trace(t, tn, mx_hops):  # tn = index in bin
     #print("=== deleted: 1918 %d, addrs %d, hops %d, total_hops %d" % (
     #    n_1918_deleted, addrs_deleted, hops_deleted, total_hops))
 
-
-
     return n_1918_deleted, addrs_deleted, hops_deleted, \
         total_addrs, total_hops, succ
 

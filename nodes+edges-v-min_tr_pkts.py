@@ -162,8 +162,8 @@ else:
             print("stats_fn = %s" % fn)
             sa = fn.split("-");  mx_depth = int(sa[5])
             print("Stats report for file %s, mx_depth = %d" % (fn, mx_depth))
-            #mf_obj = mf.MsmFile(fn, n_bins)
-            mf_obj = mf.MsmFile(fn, 10)  # Only read in 10 bins
+            #mf_obj = mf.MsmFile(fn, 10)  # Only read in 10 bins
+            mf_obj = mf.MsmFile(fn, n_bins)
             msm_objs.append(mf_obj)
     plot_single_bin(0, msm_objs)  # Plot only bin  0
 

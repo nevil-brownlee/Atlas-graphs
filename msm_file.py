@@ -39,12 +39,21 @@ class Root:
         self.pc_edges = np.zeros(len(tbs.prune_pkts))
         self.pc_nodes = np.zeros(len(tbs.prune_pkts))
         self.pc_tr_pkts = np.zeros(len(tbs.prune_pkts))
+<<<<<<< HEAD
 
+=======
+        #for x in range(tb_mx_depth):
+        #    print("--- d=%d, len(d_edges[d])=%d" % (x, len(self.d_edges[x])))
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         for pcx,pc in enumerate(tbs.prune_pkts):  # for each prune_pc
             #prune_tr_pcs = int(tbs.prune_pcs[pcx]*
             #    tbs.mx_root_tr_pkts/100.0)
             prune_tr_pkts = int(tbs.prune_pkts[pcx])
                 # Use min_tr_pks instead of prune_pcs
+<<<<<<< HEAD
+=======
+  
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
             for d in range(tb_mx_depth):  # each depth (for this root)
                 e_d = self.d_edges[d]  # Edges dict for this depth
@@ -54,6 +63,7 @@ class Root:
                     #print("e=%s, to %s from %s, %d tr_pkts" % (
                     #    e, to, fr, tr_pkts))
                     if tr_pkts >= prune_tr_pkts:
+<<<<<<< HEAD
                         if not e in self.pd_edges:
                             self.pd_edges[pcx][e] = True
                         if not fr in self.pd_nodes:
@@ -61,6 +71,15 @@ class Root:
 
             # nodes+edges-v-min_tr_pkts.py
             #     plots pc_edges and pc_nodes vs min_tr pkts
+=======
+                        if not np.any(fr == self.pc_edges):
+                                # fr in self.pc_edges
+                            self.pd_edges[pcx][e] = True
+                        if not np.any(fr == self.pc_nodes):
+                                # fr in self.pc_nodes
+                            self.pd_nodes[pcx][fr] = True
+
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             self.pc_edges[pcx] = len(self.pd_edges[pcx])
             self.pc_nodes[pcx] = len(self.pd_nodes[pcx])
             #self.pc_tr_pkts[pcx] = len(self.d_tr_pkts[pcx])
@@ -108,15 +127,25 @@ class TbStats:
         #print("sum_roots(): pc_tr_pkts = %s" %  self.pc_tr_pkts)
 
         self.tb_tr_pkts = [  # Tr_Pkts for roots x depth (2D)
+<<<<<<< HEAD
             [] for j in range(tb_mx_depth)]  # Stacked bars for each depth
         #?self.tn_tr_pkts = []  # Tr_Pkts for all roots at each depth (1D) 
+=======
+            [] for j in range(tb_mx_depth)]
+        self.tn_tr_pkts = []  # Tr_Pkts for all roots at each depth (1D) 
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         d_t_pkts = np.zeros(tb_mx_depth)
         for d in range(tb_mx_depth):
             for r in range(len(self.ra)):  # All the root objects
                 self.tb_tr_pkts[d].extend(self.ra[r].d_tr_pkts[d]) # << plotted
+<<<<<<< HEAD
                 # Nbr pkts at this depth
             #?self.tn_tr_pkts.append(np.array(self.tb_tr_pkts[d]))
             print("tb_tr_pkts[%d] = %s" % (d, self.tb_tr_pkts[d]))
+=======
+            self.tn_tr_pkts.append(np.array(self.tb_tr_pkts[d]))
+            #print("tb_tr_pkts[%d] = %s" % (d, self.tb_tr_pkts[d]))
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             d_t_pkts[d] =  np.array(self.tb_tr_pkts[d]).sum()
 
         #print("d_t_pkts = %s" % d_t_pkts)
@@ -124,10 +153,17 @@ class TbStats:
         #print("tot_tr_pkts = %d" % tot_tr_pkts)
         pc_mult = 100.0/tot_tr_pkts
         cum_pc_tr_pkts = np.cumsum(d_t_pkts*pc_mult)
+<<<<<<< HEAD
         print("%d: cum_pc_tr_pkts =" % msm_id, end='')
         for d in range(tb_mx_depth):
             print("  %.2f" % cum_pc_tr_pkts[d], end='')
         print()
+=======
+        #print("%d: cum_pc_tr_pkts =" % msm_id, end='')
+        #for d in range(tb_mx_depth):
+        #    print("  %.2f" % cum_pc_tr_pkts[d], end='')
+        #print()
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
             
 class MsmFile:
@@ -199,10 +235,17 @@ class MsmFile:
                 break
             if flag == "H":  # Header for timebin bn
                 t_dest, n_traces, mx_tr_pkts, prune_pc, prune_tr_pkts, f_bn = la
+<<<<<<< HEAD
                 print(">>> bn %d: msm_id %s, mx_depth %d, mx_tr_pkts %s," % (
                     bn, self.msm_id, self.mx_depth, mx_tr_pkts))
                 print("prune_pc %s, prune_tr_pkts %s, n_traces %s" % (
                    prune_pc, prune_tr_pkts, n_traces))
+=======
+                #print(">>> bn %d: msm_id %s, mx_depth %d, mx_tr_pkts %s," % (
+                #    bn, self.msm_id, self.mx_depth, mx_tr_pkts))
+                #print("prune_pc %s, prune_tr_pkts %s, n_traces %s" % (
+                #    prune_pc, prune_tr_pkts, n_traces))
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                 tbs = TbStats(bn, self.msm_id)
                 tbs.set_TbRoots(prune_pc, mx_tr_pkts)
                 flag, la, ln = self.read_roots(tbs, ln)

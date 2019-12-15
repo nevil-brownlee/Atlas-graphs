@@ -6,12 +6,16 @@
 
 import string, os
 from datetime import datetime
+<<<<<<< HEAD
 import subprocess
+=======
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 import getparams as gp
 
 # Config variables - written to file, reused if not reset
 #
+<<<<<<< HEAD
 # -y start_ymd      20170220  Start time of dataset
 # -h start_hhmm     0000
 # -n n_bins         48        Nbr of bins per day
@@ -20,6 +24,16 @@ import getparams as gp
 # -f full_graphs    True      Work on/with full graphs (id = IP address)
 #                   False     Produce ASN-based graphs (id = ASN)
 # -s write_stats    False     
+=======
+# y start_ymd      20170220  Start time of dataset
+# h start_hhmm     0000
+# n n_bins         48        Nbr of bins per day
+# d n_days         7         Nbr of days in dataset
+# m msm_id         5005      Measurement ID to use
+# f full_graphs    True      Work on/with full graphs (id = IP address)
+#                  False     Produce ASN-based graphs (id = ASN)
+# s write_stats    False     
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 # Python note:
 # This is a module; importing it (essentially) creates a single class instance.
@@ -28,7 +42,11 @@ import getparams as gp
 # module can see them.
 
 dir = "."  # Base directory for RIPE graph files
+<<<<<<< HEAD
 agp = gp.AgParams(dir)  # Get -* parameters
+=======
+agp = gp.AgParams(dir)  # Get parameters
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 start_ymd, start_hhmm, msm_id, n_bins, n_days, \
     full_graphs, write_stats, rem_cpx = agp.param_values()
@@ -49,6 +67,7 @@ ds_stem = "%d-%s-%s" % (msm_id, start_ymd, ft_range)
 
 msm_nbrs = [5005, 5015, 5006, 5004, 5016, 5017]  # Decreasing nbr of edges
 
+<<<<<<< HEAD
 msm_dests = {5017: ("ronin.atlas",15,20),  # name, prune max, mx_depth
                                            # pp[2] of 80 is about 0.3%
              # Note: in 20191211 data, a few IP addrs reached mx_depth (15)!
@@ -78,6 +97,19 @@ msm_instances_2017 = {5017: 1, 5005: 70, 5006: 9, 5015: 2, 5004:241, 5016: 164,
                  5012:153, 5016:164, 5017:1, 5020:1}  # 28 Nov 2019 (NZDT)
 
 def msm_pp(msm):  # Prune parameters
+=======
+msm_dests = {5017: ("ronin.atlas",13,20), 
+             5005: ("i.root",13,20),  # pp[2] of 80 is about 0.3%
+             5016: ("j.root",13,20),
+             5006: ("m.root",13,20),
+             5015: ("h.root",13,20),
+             5004: ("f.root",13,20) }
+
+msm_instances = {5017: 1, 5005: 50, 5006: 8, 5015: 2, 5004: 58, 5016: 127}
+
+def msm_pp(msm):  # Prune parameters
+
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     pp = msm_dests[msm]
     p_pkts = isinstance(pp[2], int)  # True if pp[2] is an int
     if p_pkts:
@@ -86,7 +118,11 @@ def msm_pp(msm):  # Prune parameters
         prune_s = "%.2f" % pp[2]
     return (pp[0],  # dname
             pp[1],  # mx_depth
+<<<<<<< HEAD
             pp[2],  # prune_pc (float) or prune_tr_pkts (int)
+=======
+            pp[2],  # prune_pc (float) or mx_tr_pkts (int)
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             p_pkts, # True if it's a max_tr_pkts
             prune_s)  # p_pkts as string
 
@@ -121,8 +157,12 @@ def set_pp(stats_file, msm_id):  # True to use stats file instead of graphs file
     dname, mx_depth, prune_pc, p_pkts, prune_s = msm_pp(msm_id)
     if stats_file:  # For graph-stats.py analysis
         mx_depth = stats_mx_depth
+<<<<<<< HEAD
         #prune_p = stats_min_tr_pkts;  p_pkts = True
         prune_p = msm_dests[msm_id][2];  p_pkts = True  # 1 Dec 2019 !!
+=======
+        prune_p = stats_min_tr_pkts;  p_pkts = True
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         prune_s = "%s" % prune_p
     dgs_info = "%d-%s" % (mx_depth, prune_s)
 
@@ -150,7 +190,10 @@ def msm_graphs_fn(msm_id):  # Depends on full_graphs !
 
 def stats_fn(msm_id):
 ##    print("mx_depth=%d, prune_pc=%.2f <<< stats_fn" % (mx_depth, prune_pc))
+<<<<<<< HEAD
     print("config.py: msm_id = %s" % msm_id)
+=======
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     return "%s/stats-%d-%s-%s-%d-%s.txt" % (start_ymd,
         msm_id, start_ymd, ft_range, mx_depth, prune_s)
 
@@ -162,7 +205,10 @@ def success_fn(msm_id):
 #target_bn_lo = 0;  target_bn_hi = 2 # Bin 1 and bin 2
 #target_bn_lo = 0;  target_bn_hi = 4 # Bin 0-3 only
 #target_bn_lo = 0;  target_bn_hi = 24  # First 12 hours only
+<<<<<<< HEAD
 
+=======
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 target_bn_lo = 0;  target_bn_hi = n_days*n_bins  # All bins
 #  Target bin range used by build_graphs.py and make-combined-svgs.py
 
@@ -213,11 +259,15 @@ duration = n_bins*n_days/2  # Hours
 
 bgp_fn = "%s/bgp-%s.%02d.gz" % (start_ymd, bgp_time, duration)
 
+<<<<<<< HEAD
 def nodes_fn(msm_id):
     return "%s/nodes-%d-%s-%s-%d-%s.txt" % (
         start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
 
 def asn_fn(msm_id):
+=======
+def asn_fn():
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     return  "%s/asns-%d-%s-%s-%d-%s.txt" % (
         start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
 
@@ -228,6 +278,7 @@ def asn_dests_fn(msm_id):
 
 # asn-stats.py
 
+<<<<<<< HEAD
 def whois_fn(msm_id):
     return "%s/whois-%d-%s-%s-%d-%s.txt" % (
         start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
@@ -278,3 +329,11 @@ def find_gz_files(keyword):
         if len(line) > 1:
             existing_files.append(line[0])  # filename up to first '-'
     return existing_files
+=======
+def whois_fn():
+    return "%s/whois-%d-%s-%s-%d-%s.txt" % (
+        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+
+# make-html-slides.py
+
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385

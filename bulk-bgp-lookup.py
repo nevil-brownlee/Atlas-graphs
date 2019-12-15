@@ -4,8 +4,11 @@
 #
 # Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC
 
+<<<<<<< HEAD
 import string, os
 
+=======
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 import sys, gzip, glob
 from radix import Radix
 
@@ -14,6 +17,11 @@ from dgs_ld import find_usable_file
 import config as c
 c.set_pp(False, c.msm_id)  # Set prune parameters
 
+<<<<<<< HEAD
+=======
+rtree=Radix()
+
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 bgp_fn = c.bgp_fn
 print("bgp_fn = %s" % bgp_fn)
 bfa = bgp_fn.split('.')
@@ -33,11 +41,23 @@ for fn in bfa_files:
             bgp_fn = fn
 print("   using file %s <<<" % bgp_fn)
 
+<<<<<<< HEAD
 ##reqd_date = b"20120222"  # "20120517" b"20120507"
 ##rq_date_s = reqd_date.decode('utf-8')
 
 rtree=Radix()
 
+=======
+print("node_fn = %s" % c.node_fn)
+node_fn = find_usable_file(c.node_fn)
+if node_fn != '':
+    print("Will use node-file %s" % node_fn)
+else:
+    print("No usable node file, run  pypy3 make-combined-svgs <<<")
+    exit()
+
+print("will write asn_fn: %s" % c.asn_fn())
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 n = 0
 with gzip.open(bgp_fn, 'rb') as zif:
     tb_n = 0;  tb = None
@@ -70,6 +90,7 @@ with gzip.open(bgp_fn, 'rb') as zif:
 sys.stderr.write("finished loading BGP data\n")
 sys.stderr.write("Loaded %d lines" % n)
 
+<<<<<<< HEAD
 enf, nntb = c.find_msm_files("nodes", c.start_ymd)
 print("nodes files have %s timebins" % nntb)
 print("existing nodes files = %s" % enf)
@@ -111,3 +132,30 @@ for msm_id in enf:
     for n in no_asns:
         print(n)
     print("len(no_asn_nodes) = %d" % len(no_asn_nodes))
+=======
+node_f = open(c.node_fn, "r")
+###node_f = open("20170220/no-asn-nodes-5005.txt", "r")
+
+asn_f = open(c.asn_fn(), "w")
+no_asn_nodes = {}
+for line in node_f:
+    prefix = line.rstrip()  # Remove whitespace
+    origin = '-'
+    try:
+        rnode = rtree.search_best( prefix )
+        print("rnode = %s" % rnode)  # <<<<<<<<<<<<<<<<<<<<<
+        if rnode:
+            # account for multi-origin:            
+            origin = '|'.join( rnode.data['origin'] )
+    except:
+        #pass  #  Not in bgp table!
+        no_asn_nodes[prefix] = True
+    asn_f.write("%s %s\n" % (prefix, origin))
+
+asn_f.close();  node_f.close()
+no_asns = sorted(no_asn_nodes)
+for n in no_asns:
+    print(n)
+
+print("len(no_asn_nodes) = %d" % len(no_asn_nodes))
+>>>>>>> 92c20d888b97d193e9f23a45066c314830055385
