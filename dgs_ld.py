@@ -1,14 +1,10 @@
-<<<<<<< HEAD
 # 1629, Mon  8 Jul 2019 (NZST)
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 # 1840, Mon 13 Nov 2017 (SGT)
 # 1607, Fri 11 Mar 2016 (NZDT)
 #
 # dgs_ld.py: DestGraphs, PrunedNode and BinGraph classes, together
 #                with load_graphs() to load a dumped DestGraphs file
 #
-<<<<<<< HEAD
 # Copyright 2019, Nevil Brownlee,  U Auckland | RIPE NCC
 
 import graph
@@ -16,14 +12,6 @@ import graph
 from subprocess import call
 import string, sys, glob, os  #, math
 import datetime
-=======
-# Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC
-
-import graph
-import ipp, natkit
-from subprocess import call
-import string, sys, glob  #, math
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 import config as c
 c.set_pp(False, c.msm_id)  # Set prune parameters
@@ -94,16 +82,10 @@ class PrunedNode:
         self.fails = fails  # tr pkts that reached _this_ root node
         self.s_nodes = {}
         self.type = None  # For asn-filter.py
-<<<<<<< HEAD
         self.shape = None  # Will be set for 'root' and 'subroot' nodes
         #self.fill = 0  # Fill colour when drawing nodes
         self.pos = ''
         self.x = self.y = None
-=======
-        self.shape = None  # Set for 'root' nodes
-        #self.fill = 0  # Fill colour when drawing nodes
-        self.pos = ''
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         self.drawn = False  # Used as 'counted' in chages.count_subtree()
         self.pc_change = 0
 
@@ -235,7 +217,6 @@ class PrunedNode:
                 colour = self.ipc_colour(this_ic, last_ic)
         return colour
 
-<<<<<<< HEAD
     def draw_node(self, noASNs, of, pops, wg, node_dir, asn_dir, version,
             changing, last_bg):
         d_ps = self.prefix_s(self.prefix)  # Node name
@@ -245,15 +226,6 @@ class PrunedNode:
 #        else:
         label = ''  # Default, just use node name
         if self.shape:  # Show in_count for non-ellipse (i.e. default) nodes
-=======
-    def draw_node(self, of, pops, wg, node_dir, asn_dir, version,
-            changing, last_bg):
-        d_ps = self.prefix_s(self.prefix)  # Node name
-
-        if self.in_count == 0:
-            label = ''  # Default, use node name
-        else:
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             fails_s= ''
             if self.fails != 0:
                 fails_s = " <%d>" % self.fails
@@ -275,14 +247,10 @@ class PrunedNode:
         else:
             asn = self.prefix
 
-<<<<<<< HEAD
         if noASNs:
             cx_tuple = (self.x, self.y)
             t_text = None  # No whois info
         elif asn in asn_dir:
-=======
-        if asn in asn_dir:
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             cx_tuple = asn_dir[asn]
             cx = int(cx_tuple[0])
             t_text = cx_tuple[1]  # for tooltip
@@ -291,17 +259,11 @@ class PrunedNode:
             t_text = "%s  no whois info" % asn
             print("No whois info for %s (asn %s) <<<" % (self.prefix, asn))
 
-<<<<<<< HEAD
         if noASNs:
             colour = "black"
         ##elif c.full_graphs:  # [cx] not defined below ???
         ##?    colour = "%s" % asn_colours[cx]  # Colour shows which ASN it is
         else:  # ASN or full graph
-=======
-        if c.full_graphs:
-            colour = "%s" % asn_colours[cx]  # Colour shows which ASN it is
-        else:  # ASN graph
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             colour = self.node_colour(changing, last_bg)
         n_colour = ", color=\"%s\"" % colour
 
@@ -392,16 +354,10 @@ class PrunedNode:
         
 def set_graph_attribs(of):
     of.write("  graph [splines=false, overlap=false];\n")
-<<<<<<< HEAD
                   # splines=true draws curved lines, but take far too long!
                   # edges may overlap, nodes may not overlap
                   # node position set from whole-graph,
                   # neato uses pos=x,y! to indicate 'pinned' node position
-=======
-                 # edges may overlap, nodes may not overlap
-                 # node position set from whole-graph,
-                 # neato uses pos=x,y! to indicate 'pinned' node position
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                  
 class BinGraph:
     def __init__(self, n_traces, n_succ_traces, n_dup_traces, \
@@ -418,22 +374,11 @@ class BinGraph:
             # skel.py dumps this as an array
         self.version = version
         self.pops = {}  # load_bingraph() loads tree as pops
-<<<<<<< HEAD
 
     def draw_graph(self, noASNs, dot_fn, svg_fn,  draw_dir, dgs_stem, \
             bin_nbr, wg, dest, node_dir, asn_dir, changing_nodes, last_bg):
         # wg is the WholeGraph with all the node positions
 
-=======
-        #?self.gone_nodes = []
-        #?self.new_nodes = []
-        #?self.change_nodes = []
-
-    def draw_graph(self, dot_fn, svg_fn,  draw_dir, dgs_stem, \
-            bin_nbr, wg, dest, node_dir, asn_dir, changing_nodes, last_bg):
-        # wg is the WholeGraph with all the node positions
-                
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         #dot_fn = "%s-%02d.dot" % (dgs_stem, bin_nbr)
         #svg_fn = "%s-%02d.svg" % (dgs_stem, bin_nbr)
         of = open(dot_fn, "w", encoding='utf-8')
@@ -453,10 +398,7 @@ class BinGraph:
             sub_root_shape = "octagon"
 
         if str(self.roots[0]) != dest:  # Never reached dest
-<<<<<<< HEAD
             print(">>> No traces reached dest (%s)" % dest)
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             root_shape = sub_root_shape
 
         for j,root in enumerate(self.roots):  # Draw root nodes
@@ -464,23 +406,14 @@ class BinGraph:
             rn = self.pops.get(root_s)
             if rn:
                 rn.shape = root_shape
-<<<<<<< HEAD
                 rn.draw_node(noASNs, of, self.pops, wg, node_dir, asn_dir, 
-=======
-                rn.draw_node(of, self.pops, wg, node_dir, asn_dir, 
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                     self.version, changing_nodes, last_bg)
             root_shape = sub_root_shape
 
         for pk in self.pops:  # Draw all nodes except the roots
         #    if pk not in drawn_roots:
-<<<<<<< HEAD
             self.pops[pk].draw_node(noASNs, of, self.pops, wg,  node_dir,
                 asn_dir, self.version, changing_nodes, last_bg)
-=======
-            self.pops[pk].draw_node(of, self.pops, wg,  node_dir, asn_dir,
-                self.version, changing_nodes, last_bg)
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                 
         for nk in sorted(self.pops):  # Draw edges for all pops
             n = self.pops[nk]
@@ -520,23 +453,17 @@ class DestGraphs:
         self.msm_id = msm_id;  self.dest = dest  # Traces info
         self.n_traces = n_traces
         self.start_dt = start_dt;  self.end_dt = end_dt
-<<<<<<< HEAD
         self.graph_start_dt = self.start_dt  # Save original start_dt
         print("@3@ DestGraphs.__init__: start_dt=%s, end_dt=%s" % (start_dt, end_dt))
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         dname, self.mx_depth, self.prune_p, self.p_pkts, \
             self.prune_s = c.msm_pp(msm_id)  # Graph pruning info
         self.bga = bga  # List of BinGraphs, one for each timebin
 
-<<<<<<< HEAD
     def change_bin_range(self, first_bin, n_bins, new_bga):
         dt_obj = datetime.datetime.strptime(self.graph_start_dt, "%Y-%m-%dT00")
         self.start_dt = dt_obj+datetime.timedelta(seconds=first_bin*3600)
         self.bga = new_bga
 
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     def dump(self, df):
         version_s = ''  # Version 1
         if self.version == 2:
@@ -549,11 +476,7 @@ class DestGraphs:
             bg.dump(df, bn)
         df.close()
 
-<<<<<<< HEAD
 def load_bingraph(df, line, version, min_tr_pkts):
-=======
-def load_bingraph(df, line, version):
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     la = line.split()
     if la[0] != "BinGraph":
         print(">>> Expected 'BinGraph'")
@@ -582,44 +505,28 @@ def load_bingraph(df, line, version):
             la = line.split()
             if la[0] != "Node":
                 break
-<<<<<<< HEAD
             subnet = int(la[2])  # i.e. sub-tree
-=======
-            subnet = int(la[2])
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             # la[3] = total in_count
             fails = 0
             if len(la) > 4:
                 fails = int(la[4])
-<<<<<<< HEAD
-=======
-            pn = PrunedNode(la[1], subnet, int(la[3]), fails)
-                # addr, subnet, in_count for pn
-            pn.node_count = 1  # changes.count_subtree() may update
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             node_line = df.readline()
             if not node_line:  # EOF
                 eof = True
                 break
-<<<<<<< HEAD
             ## ?? tot_tr_pkts_in = 0  #int(la[3])
             tot_tr_pkts_in = int(la[3])
             pn = PrunedNode(la[1], subnet, tot_tr_pkts_in, fails)
                 # addr, subnet, in_count for pn
             pn.node_count = 1  # changes.count_subtree() may update
 
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             if len(node_line) != 0:
                 la = node_line.split()  # List of addr+in_count pairs
                 for j in range(0, len(la), 2):  # Build s_nodes for pn
                     prefix_str = la[j];  sn_count =  int(la[j+1])
-<<<<<<< HEAD
                     if min_tr_pkts and sn_count < min_tr_pkts:
                         continue  # leave out edges with too few tr pkts
                     tot_tr_pkts_in += sn_count
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                     #ASNprefix = ipp.from_s(prefix_str)
                     prefix = prefix_str
                     pn.s_nodes[prefix] = sn_count
@@ -628,14 +535,10 @@ def load_bingraph(df, line, version):
                             prefix_str, subnet, sn_count, fails)
                         sn.node_count = 1  # changes.count_subtree() may update
                         pops[prefix] = sn
-<<<<<<< HEAD
 
             if min_tr_pkts and tot_tr_pkts_in < min_tr_pkts:
                 continue  # leave out nodes with too few tr pkts
             pops[pn.prefix] = pn
-=======
-                pops[pn.prefix] = pn
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
                 
     bg = BinGraph(n_traces, n_succ_traces, n_dup_traces, \
             t_addrs, t_hops, t_hops_deleted,  mx_edges, roots, tree,  version)
@@ -656,10 +559,7 @@ def load_graphs(fn):
     msm_id = int(la[1]);  dest = la[2];  n_traces = int(la[3])
     start_dt = la[4];  end_dt = la[5]
     mx_depth = int(la[6]);  prune_s = la[7]
-<<<<<<< HEAD
     print("@2@ dgs_ld.load_graphs: start_dt=%s, end_dt=%s" % (start_dt, end_dt))
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     version = 1
     if len(la) > 8:
         version = int(la[8])
@@ -668,7 +568,6 @@ def load_graphs(fn):
     j = 0
     while True:  # Load BinGraphs
         j += 1
-<<<<<<< HEAD
         bg, eof, line = load_bingraph(df, line, version, None)
         bga.append(bg)
         if eof:
@@ -700,9 +599,6 @@ def load_graphs_min_tr(fn, min_tr_pkts):
     while True:  # Load BinGraphs
         j += 1
         bg, eof, line = load_bingraph(df, line, version, min_tr_pkts)
-=======
-        bg, eof, line = load_bingraph(df, line, version)
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         bga.append(bg)
         if eof:
             df.close()
@@ -713,7 +609,6 @@ def load_graphs_min_tr(fn, min_tr_pkts):
 
 def find_usable_file(a_fn):  # For filenames that end with pruning parameters
     # These are:
-<<<<<<< HEAD
     #   graphs_fn, node_fn (and
     #    msm_graphs_fn, msm_asn_graphs_fn, stats_fn, success_fn)
     # Used by make-combined-svgs.py for asns and whois files
@@ -763,32 +658,3 @@ if __name__ == "__main__":  # Running as main()
     #print("BinGraphs: %s %s %d  %s %s  %d %.2f" % (
     #    dgs.msm_id, dgs.dest, dgs.n_traces, dgs.start_dt, dgs.end_dt,
     #    dgs.mx_depth, dgs.prune_pc))
-=======
-    #   graphs_fn, node_fn,  (msm_graphs_fn, msm_asn_graphs_fn_
-    #   stats_fn, success_fn,
-    afa = a_fn.rsplit('-', 3)
-    a_ppc = afa[-1][0:-4]
-    afa_files = glob.glob(afa[0]+'*')
-    for fn in afa_files:
-        if fn == a_fn:
-            return a_fn
-        if fn.index(afa[0]) == 0:
-            fna = fn.rsplit('-',3)
-            if afa[1] >= fna[1]:
-                if afa[2] >= fna[2]:
-                    f_ppc = fna[-1][0:-4]
-                    a_int = a_ppc.find('.') < 0
-                    f_int = f_ppc.find('.') < 0
-                    if a_int and f_int:
-                        if int(f_ppc) <= int(a_ppc):
-                            return fn
-    return ''
-
-if __name__ == "__main__":  # Running as main()
-    print("argv = %s" % sys.argv)
-    dgs = load_graphs(sys.argv[1])  # arg[0] is name of program
-    print("BinGraphs: %s %s %d  %s %s  %d %.2f" % (
-        dgs.msm_id, dgs.dest, dgs.n_traces, dgs.start_dt, dgs.end_dt,
-        dgs.mx_depth, dgs.prune_pc))
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
- 

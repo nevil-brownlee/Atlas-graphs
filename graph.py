@@ -7,11 +7,7 @@
 
 import traceroute as tr
 import dgs_ld
-<<<<<<< HEAD
 ##import ipp
-=======
-import ipp
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 import sys, collections
 
@@ -126,10 +122,6 @@ class Node:
             return mx_so_far, False  
 
         if self.state != 0:  # Been here before
-<<<<<<< HEAD
-=======
-            #print("loop detected at %s" % self.prefix)
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
             Node.n_loop_detected += 1
             return mx_so_far, False
 
@@ -261,11 +253,7 @@ def build_graph(tb_n, traces, g_dest, t_traces, t_addrs, t_hops, t_succ, \
         t_addrs_deleted, t_hops_deleted, msm_id, sf):
     d_name, mx_depth, prune_p, p_pkts, prune_s = c.msm_pp(msm_id)
     # Build pops{}, key = ip_adr, values = Node
-<<<<<<< HEAD
     # Each Node has tr_pkts that reach it (from s_nodes{})
-=======
-    # Each Node has tr_pkts that reach it (in s_nodes{})
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     msm_id = [];  dest_n = [];  Node.pops = collections.OrderedDict()
         # Clear these for each graph!
     tot_self_ref = 0
@@ -314,11 +302,7 @@ def build_graph(tb_n, traces, g_dest, t_traces, t_addrs, t_hops, t_succ, \
     print("*** self_refs pruned = %d" % tot_self_ref)
 
     # Graph built (in pops{})
-<<<<<<< HEAD
     # print_pops()
-=======
-    #print_pops()
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
     for pk in Node.pops:
         Node.pops[pk].state = 0  # Not tested        

@@ -84,7 +84,6 @@ print("Starting: c.msm_id = %s, reqd_msms = %s" % (c.msm_id, reqd_msms))
 
 n_bins = c.n_bins*c.n_days
 
-<<<<<<< HEAD
 #def plot_stat(plt_title, stat1_data, stat2_data, stat1_name, stat2_name):
 #    n_bins = len(stat1_data)
 #    fig, ax1 = pplt.subplots()
@@ -109,32 +108,6 @@ n_bins = c.n_bins*c.n_days
 #    fig.tight_layout()
 #    fig.savefig("test.svg")
 #    #pplt.show()
-=======
-def plot_stat(plt_title, stat1_data, stat2_data, stat1_name, stat2_name):
-    n_bins = len(stat1_data)
-    fig, ax1 = pplt.subplots()
-
-    ax1.set(xlabel='timebin', ylabel=stat1_name, title = plt_title)
-    xv = np.concatenate(([0], np.cumsum(np.ones(n_bins-1))))
-    ax1.grid()
-
-    colour = 'tab:red'
-    ax1.set_ylim(9100, 10000)
-    ax1.set_ylabel(stat1_name, color=colour)
-    ax1.plot(xv, stat1_data, color=colour)
-
-    ax2 = ax1.twinx()  # Share same x axis
-    colour = 'tab:blue'
-    ax2.set_ylabel(stat2_name, color=colour)
-    #ax2.set_ylim(12200, 12600)  # n_dup_traces
-    #ax2.set_ylim(1280000, 1320000)  # t_hops
-    ax2.set_ylim(128500, 132000)  # t_addrs
-    ax2.plot(xv, stat2_data, color=colour)
-
-    fig.tight_layout()
-    fig.savefig("test.svg")
-    #pplt.show()
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 msm_gis = []
 
@@ -171,12 +144,8 @@ for msm_id in reqd_msms:
 
 s_title = "stats-%s.txt" % c.start_ymd
 sf = open(s_title, "w", encoding='utf-8')
-<<<<<<< HEAD
 sf.write("python3 msm-performance.py -y %s -n %s -d 1 +i %s\n\n" % (
-    c.start_ymd, c.n_bins, reqd_msms))
-=======
-sf.write("python3 msm-performance.py -y %s -n %s -d 1 +i 5017 5005 5016 5004 5006 5015\n\n" % (c.start_ymd, c.n_bins))
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
+    c.start_ymd, c.n_bins, " ".join(map(str,reqd_msms))))
 
 def gi_stats(gi, a_name):
     return gi.stats[a_name]
@@ -194,10 +163,7 @@ def print_stat(a_name, stat_fn):
     for gi in msm_gis:
         v = stat_fn(gi, a_name)
         mean = np.mean(v);  iqr = scipy.stats.iqr(v)
-<<<<<<< HEAD
         print("gi = %s, mean = %s, iqr = %s" % (gi.msm_id, mean, iqr))
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
         sf.write("{0:>8d}|{1:<4d}".format(int(mean), int(iqr)))
     sf.write("\n")
 
@@ -212,34 +178,18 @@ for msm_id in reqd_msms:
 sf.write("\n")
 
 sf.write("{:>17}".format('instances  '))
-<<<<<<< HEAD
 if c.start_ymd[0:4] == "2012":
     instances = c.msm_instances_2012
 elif c.start_ymd[0:4] == "2017":
     instances = c.msm_instances_2017
 elif c.start_ymd[0:4] == "2019":
     instances = c.msm_instances_2017
-=======
-if c.start_ymd[0:4] == "2017":
-    instances = c.msm_instances_2017
-elif c.start_ymd[0:4] == "2012":
-    instances = c.msm_instances_2012
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 for msm_id in reqd_msms:
     sf.write("{:^13}".format(instances[msm_id]))
 sf.write("\n\n")
 
 def n_traces_pc(gi, a_name):
-<<<<<<< HEAD
-    print("n_traces_pc %s:" % a_name)
-    print("  n_succ_traces = %s" % gi.n_succ_traces)
-    print("  n_traces = %s" % gi.n_traces)
-    #return np.divide(gi.n_succ_traces*100.0, gi.n_traces)
-    print(np.divide(gi.n_succ_traces, gi.n_traces))
-    return np.divide(gi.n_succ_traces, gi.n_traces)
-=======
     return np.divide(gi.n_succ_traces*100.0, gi.n_traces)
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 print_stat("n_traces", gi_stats)
 print_stat("trs_success", gi_stats)

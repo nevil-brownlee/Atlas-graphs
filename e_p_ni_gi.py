@@ -11,7 +11,6 @@
 # CAUTION: run using python3, pypy needs its own version (numpypy)
 
 import numpy as np
-#import math, datetime
 
 import config as c
 
@@ -253,45 +252,28 @@ class GraphInfo:
         self.n_subroot_trs = np.zeros(self.n_bins)
         self.stats["trpkts_subroot"] = self.n_subroot_trs
 
-        def p1_end_of_bin(bn):
-            print("p1_end_of_bin(%s)" % bn)
-            self.edges_tot[bn] = len(self.edges)
-            e_same = e_inter = 0
-            for e_key  in self.edges:
-                e = self.edges[e_key]
-                if e.asn_to == e.asn_from:
-                    e_same += 1
-                else:
-                    e_inter += 1
-                self.edges_same[bn] = e_same;  self.edges_inter[bn] = e_inter
-                self.n_subroots[bn] = n_subroots
-                self.n_subroot_trs[bn] = n_subroot_trpkts
-
         self.fn = c.msm_graphs_fn(self.msm_id)
         print(" >>> %d: %s" % (msm_id, self.fn))
         f = open(self.fn, "r")
         gf_version = 1
-        bn = -1  # Starting bin 0
+        bn = -1
         for line in f:  # Read in the graphs file
             la = line.strip().split(maxsplit=1)
             if la[0] == "BinGraph":
-                print(la)
                 if bn >= 0:
-                    p1_end_of_bin(bn)
-#                    self.edges_tot[bn] = len(self.edges)
-#                    e_same = e_inter = 0
-#                    for e_key  in self.edges:
-#                        e = self.edges[e_key]
-#                        if e.asn_to == e.asn_from:
-#                            e_same += 1
-#                        else:
-#                            e_inter += 1
-#                    self.edges_same[bn] = e_same;  self.edges_inter[bn] = e_inter
-#                    self.n_subroots[bn] = n_subroots
-#                    self.n_subroot_trs[bn] = n_subroot_trpkts
+                    self.edges_tot[bn] = len(self.edges)
+                    e_same = e_inter = 0
+                    for e_key  in self.edges:
+                        e = self.edges[e_key]
+                        if e.asn_to == e.asn_from:
+                            e_same += 1
+                        else:
+                            e_inter += 1
+                    self.edges_same[bn] = e_same;  self.edges_inter[bn] = e_inter
+                    self.n_subroots[bn] = n_subroots
+                    self.n_subroot_trs[bn] = n_subroot_trpkts
 
                 bn = int(la[1].split()[6])
-                print("BinGraph: bn = %s" % bn)
                 roots_line = f.readline()
                 rla = roots_line.strip().split()
                 self.nodes = {}  # Dictionary, all nodes seen in bin bn
@@ -346,7 +328,10 @@ class GraphInfo:
                 if len(nv) > 7:  # nv[7] = min_tr_pkts (last in v1 headers)
                     gf_version = 2
 
-        p1_end_of_bin(bn)  # Last bin ends at EOF
+        self.edges_same[bn] = e_same;  self.edges_inter[bn] = e_inter
+        self.n_subroots[bn] = n_subroots
+        self.n_subroot_trs[bn] = n_subroot_trpkts
+        print("----- EOF for pass 1")
 
         self.edges_tot[bn] = len(self.edges)
         e_same = e_inter = 0
@@ -369,49 +354,27 @@ class GraphInfo:
         # and nodes from Node lines.  Now we look at s_nodes line
         f = open(self.fn, 'r')
         bn = -1
-
-        def p2_end_of_bin(bn):
-            print("end_of_bin(%s)" % bn)
-            #print("bn %2d, n_leaves %d, n_trpkts_outer %d" % \
-            #    (bn, len(leaf_nodes), self.trpkts_outer))
-            self.nodes_outer[bn] = len(leaf_nodes)
-            self.trpkts_outer[bn] = trpkts_outer
-            self.nodes = {}  # Dictionary, all nodes seen in bin bn
-            self.edges = {}  # Ditto for edges
-            self.paths = {}  # Ditto for paths
-            trpkts_outer = 0;  leaf_nodes = {}
-                    
-            ila = list(map(int, la[1].split()))
-            bn = ila[6]
-            self.n_traces [bn] = ila[0]
-            self.n_succ_traces [bn] = ila[1]
-            self.n_dup_traces [bn] = ila[2]
-            self.t_addrs [bn] = ila[3]
-            self.t_hops [bn] = ila[4]
-            self.t_hops_deleted [bn] = ila[5]
-
         for line in f:  # Read in the graphs file
             la = line.strip().split(maxsplit=1)
             if la[0] == "BinGraph":
                 if bn >= 0:
-                    p2_end_of_bin(bn)
-#                    #print("bn %2d, n_leaves %d, n_trpkts_outer %d" % \
-#                    #    (bn, len(leaf_nodes), self.trpkts_outer))
-#                    self.nodes_outer[bn] = len(leaf_nodes)
-#                    self.trpkts_outer[bn] = trpkts_outer
-#                self.nodes = {}  # Dictionary, all nodes seen in bin bn
-#                self.edges = {}  # Ditto for edges
-#                self.paths = {}  # Ditto for paths
-#                trpkts_outer = 0;  leaf_nodes = {}
-#                    
-#                ila = list(map(int, la[1].split()))
-#                bn = ila[6]
-#                self.n_traces [bn] = ila[0]
-#                self.n_succ_traces [bn] = ila[1]
-#                self.n_dup_traces [bn] = ila[2]
-#                self.t_addrs [bn] = ila[3]
-#                self.t_hops [bn] = ila[4]
-#                self.t_hops_deleted [bn] = ila[5]
+                    #print("bn %2d, n_leaves %d, n_trpkts_outer %d" % \
+                    #    (bn, len(leaf_nodes), self.trpkts_outer))
+                    self.nodes_outer[bn] = len(leaf_nodes)
+                    self.trpkts_outer[bn] = trpkts_outer
+                self.nodes = {}  # Dictionary, all nodes seen in bin bn
+                self.edges = {}  # Ditto for edges
+                self.paths = {}  # Ditto for paths
+                trpkts_outer = 0;  leaf_nodes = {}
+                    
+                ila = list(map(int, la[1].split()))
+                bn = ila[6]
+                self.n_traces [bn] = ila[0]
+                self.n_succ_traces [bn] = ila[1]
+                self.n_dup_traces [bn] = ila[2]
+                self.t_addrs [bn] = ila[3]
+                self.t_hops [bn] = ila[4]
+                self.t_hops_deleted [bn] = ila[5]
             elif la[0] == "Node":
                 s_nodes_line = f.readline()  # s_nodes line
                 sna = s_nodes_line.split()  # name, in_count pairs
@@ -427,7 +390,10 @@ class GraphInfo:
             elif la[0] == "DestGraphs":
                 pass
         f.close()
-        p2_end_of_bin(bn)
+        self.nodes_outer[bn] = len(leaf_nodes)
+        self.trpkts_outer[bn] = trpkts_outer
+        print("----- EOF for pass 2")
+
         self.nodes_outer[bn] = len(leaf_nodes)
         self.trpkts_outer[bn] = trpkts_outer
 
