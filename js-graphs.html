@@ -1,0 +1,211 @@
+<html>
+
+<style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC -->
+  
+* {box-sizing:border-box}
+body {font-family: Verdana,sans-serif;margin:0}
+
+/* Slideshow container */
+.slideshow-container {
+  position: relative;
+  margin: left;
+}
+
+/* Network Graph */
+#graphDiv {
+  position: relative;
+}
+
+.graph {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 25px;
+}
+
+/* Caption text */
+#caption {
+  color: #525252;
+  font-size: 15px;
+  bottom: 4px;
+  position: fixed;
+  left: 50%; // These three lines centre text in the viewport 
+  margin-right: -50%;
+  transform: translate(-50%, -50%);
+}
+
+/* NextBin text */
+#nextv {
+color: #525252;
+  width: 4%;
+  font-size: 15px;
+  bottom: 10px;
+  position: fixed;
+  left: 2%;
+}
+#btn {
+color: #525252;
+  width: 8%;
+  font-size: 15px;
+  bottom: 10px;
+  position: fixed;
+  left: 7%;
+}
+
+/* Fading animation */
+.fade {
+  -webkit-animation-name: fade;
+  -webkit-animation-duration: 1.0s;
+  animation-name: fa  padding-bottom: 30px;
+de;
+  animation-duration: 1.0s;
+}
+
+@-webkit-keyframes fade {
+  from {opacity: .4}
+  to {opacity: 1}
+}
+
+@keyframes fade {
+  from {opacity: .4}
+  to {opacity: 1}
+}
+
+</style>
+
+<body>
+  <div class="fade">
+    <div id="graphDiv"> </div>  <!-- graph svg image displayed here -->
+  </div>
+  <div id="caption">
+    <!-- class="text" lines go here -->
+  </div>
+  <div class="nextbin">
+    <input type="text" id="nextv" value="" />
+    <input type="button" id="btn" value="Get Bin"/>
+  </div>
+<br/>
+
+<script>
+
+//var cap_stem = "5005-20160513-0700-24-7-0.50-" goes here, then var dlen = ;
+
+function keyHandler(e) {
+  e = e || window.event;
+  // key info page: http://unixpapa.com/js/key.html
+  if ([37, 38, 39, 40, 13].indexOf(e.keyCode) > -1) {
+    e.preventDefault();
+    if (e.keyCode == '38')       // up arrow
+      relSlide(-1);
+    else if (e.keyCode == '40')  // down arrow
+      relSlide(+1);
+    else if (e.keyCode == '37')  // left arrow
+      lrScroll(-1);
+    else if (e.keyCode == '39')  // right arrow
+      lrScroll(+1);
+    else if (e.keyCode == '13')  // enter
+      getBin();
+  }
+  // alert("keyHandler return");
+}
+
+var targetX, dx, steps;  // Global vars for smoothScroll()
+  
+function smoothScroll() {
+  var left = window.scrollX
+    || document.documentElement.scrollLeft;
+  var top = window.scrollY
+    || document.documentElement.scrollY;
+  if (!steps) {
+    steps = 20;  // About 1 second
+    dx = (targetX-left)/steps;
+  }
+  var x = left+dx;
+  if (x < 0) x = 0;
+  window.scrollTo(x, top);
+  if (--steps != 0) {
+    window.requestAnimationFrame(smoothScroll);  // Request next callback
+  }
+}
+		 
+function lrScroll(dir) {
+  var width = window.innerWidth
+    || document.documentElement.clientWidth
+    || document.body.clientWidth;
+  var left = window.scrollX
+    || document.documentElement.scrollLeft;
+  var dx = width*0.8;
+  if (dir > 0) targetX = left+dx;
+  else targetX = left-dx;
+  if (targetX < 0) targetX = 0;
+  steps = null;
+  window.requestAnimationFrame(smoothScroll);
+}
+  
+document.getElementById('btn').onclick = getBin;
+document.onkeydown = keyHandler;
+
+var captions = document.getElementsByClassName("text");
+var nBins = captions.length;
+for (i = 0; i != nBins; i++) captions[i].style.display = "none";
+
+var bn = 0;
+relSlide(0);
+
+function nextBn(dy) {
+  var nb = (bn+dy) % nBins;  // js % reflects around 0 !!
+  if (nb < 0) nb += nBins;
+  return nb;
+}
+
+var timeout, nBin, reqX, reqY;
+function objTimeout() {
+  window.scrollTo(reqX, reqY);
+  clearTimeout(timeout);  timeout = null;
+  document.getElementById("nextv").value = nBin;
+}
+	   
+function getBinImage(Bn) {
+  if (timeout) return;  // Timer running, ignore
+  var bns = Bn.toString(10);
+  while (bns.length < dlen) bns = '0'+bns;  // Add leading zeroes
+  var src = cap_stem + bns +'.svg';
+  //alert('src = ' + src);
+  nBin = nextBn(+1);  // For "nextv" element
+  reqX = window.scrollX;  reqY = window.scrollY;  // Save scroll position
+  //alert("x = " + scrollX + ", Y = " + scrollY);
+
+  var obj = '<object class="graph" type="image/svg+xml" data="' + src + '"></object>';
+  document.getElementById("graphDiv").innerHTML = obj;
+  timeout = setTimeout('objTimeout()', 50);  // ms wait before scrolling
+		      
+  captions[bn].style.display = "none";
+  bn = Bn;  // This bin
+  captions[bn].style.display = '';
+
+  nBin = nextBn(+1);  
+  var elem = document.getElementById("nextv");
+  if (timeout) elem.value = '';  // Timer running
+  else elem.value = nBin;
+}
+
+function getBin() {
+  var elem = document.getElementById("nextv");
+  var nv = parseInt(elem.value, 10);
+  if (nv < 0 || nv > nBins)
+    elem.value = "";  // Invalid bin nbr, blank the nextv element
+  else {
+    getBinImage(nv);
+    }
+  }
+
+function relSlide(dy) {
+  getBinImage(nextBn(dy));
+}
+
+</script>
+</body>
+</html>
+
