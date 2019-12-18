@@ -1,4 +1,4 @@
-# 1551, Tue 13 Aug 2019 (NZST)
+# 1626, Wed 18 DEC 2019 (NZDT)
 #
 # msm-performance.py:  Gather performance stats per msm
 #
@@ -163,7 +163,7 @@ def print_stat(a_name, stat_fn):
     for gi in msm_gis:
         v = stat_fn(gi, a_name)
         mean = np.mean(v);  iqr = scipy.stats.iqr(v)
-        print("gi = %s, mean = %s, iqr = %s" % (gi.msm_id, mean, iqr))
+        #print("gi = %s, mean = %s, iqr = %s" % (gi.msm_id, mean, iqr))
         sf.write("{0:>8d}|{1:<4d}".format(int(mean), int(iqr)))
     sf.write("\n")
 
@@ -178,12 +178,14 @@ for msm_id in reqd_msms:
 sf.write("\n")
 
 sf.write("{:>17}".format('instances  '))
-if c.start_ymd[0:4] == "2012":
-    instances = c.msm_instances_2012
-elif c.start_ymd[0:4] == "2017":
-    instances = c.msm_instances_2017
-elif c.start_ymd[0:4] == "2019":
-    instances = c.msm_instances_2017
+#if c.start_ymd[0:4] == "2012":
+#    instances = c.msm_instances_2012
+#elif c.start_ymd[0:4] == "2017":
+#    instances = c.msm_instances_2017
+#elif c.start_ymd[0:4] == "2019":
+instances = c.instances()
+print("*** instances = %s" % instances)
+#    instances = c.msm_instances_2017
 for msm_id in reqd_msms:
     sf.write("{:^13}".format(instances[msm_id]))
 sf.write("\n\n")

@@ -1,3 +1,4 @@
+# 1625, Wed 18 Dec 2019 (NZDT)
 # 1812, Sun  4 Mar 2018 (NZDT)
 #
 # config.py: configuration info for Nevil's Atlas graph programs
@@ -49,35 +50,50 @@ ds_stem = "%d-%s-%s" % (msm_id, start_ymd, ft_range)
 
 msm_nbrs = [5005, 5015, 5006, 5004, 5016, 5017]  # Decreasing nbr of edges
 
-msm_dests = {5017: ("ronin.atlas",15,20),  # name, prune max, mx_depth
+msm_dests = {5017: ("ronin.atlas",18,20),  # name, prune max, mx_depth
                                            # pp[2] of 80 is about 0.3%
              # Note: in 20191211 data, a few IP addrs reached mx_depth (15)!
-             5005: ("i.root",15,20),   #  70  number of sites. Nov 2019
-             5016: ("j.root",15,20),   # 104
-             5006: ("m.root",15,20),   #   9
-             5015: ("h.root",15,20),   #   2
-             5004: ("f.root",15,20),   # 241
+             5005: ("i.root",18,20),   #  70  number of sites. Nov 2019
+             5016: ("j.root",18,20),   # 104
+             5006: ("m.root",18,20),   #   9
+             5015: ("h.root",18,20),   #   2
+             5004: ("f.root",18,20),   # 241
 
-             5001: ("k.root",15,20),   #  70
-             5002: ("tt01.ripe.net",15,20),
-             5008: ("labs.ripe.net",15,20),
-             5009: ("a.root",15,20),   #  28
-             5010: ("b.root",15,20),   #   3
-             5011: ("c.root",15,20),   #  10
-             5012: ("d.root",15,20),   # 153
-             5016: ("j.root",15,20),   # 164
-             5017: ("ronin.atlas",15,20),
-             5020: ("carson",15,20) }
+             5001: ("k.root",18,20),   #  70
+             5002: ("tt01.ripe.net",18,20),
+             5008: ("labs.ripe.net",18,20),
+             5009: ("a.root",18,20),   #  28
+             5010: ("b.root",18,20),   #   3
+             5011: ("c.root",18,20),   #  10
+             5012: ("d.root",18,20),   # 153
+             5016: ("j.root",18,20),   # 164
+             5017: ("ronin.atlas",18,20),
+             5020: ("carson",18,20) }
 
+# Instances data from www.root-servers.org
 msm_instances_2012 = {5017: 1, 5005: 50, 5006: 8, 5015: 2, 5004: 58, 5016: 127,
                  5001:70, 5002:1, 5008:1, 5009:8, 5010:1, 5011:8,
-                 5012:1, 5016:70, 5017:1, 5020:1}  # Site counts for PAM 2014
+                 5012:1, 5016:70, 5017:1, 5020:1}  # Site instances for PAM 2014
 
 msm_instances_2017 = {5017: 1, 5005: 70, 5006: 9, 5015: 2, 5004:241, 5016: 164,
-                 5001:17, 5002:1, 5008:1, 5009:28, 5010:3, 5011:10,
-                 5012:153, 5016:164, 5017:1, 5020:1}  # 28 Nov 2019 (NZDT)
+                 5001:72, 5002:1, 5008:1, 5009:28, 5010:3, 5011:10,
+                 5012:153, 5016:164, 5017:1, 5020:1}  # 20 Feb Nov 2017 (NZDT)
+
+msm_instances_2019 = {5017: 1, 5005: 70, 5006: 9, 5015: 4, 5004:252, 5016: 162,
+                 5001:72, 5002:1, 5008:1, 5009:28, 5010:3, 5011:10,
+                 5012:153, 5016:162, 5017:1, 5020:1}  # 28 Nov 2019 (NZDT)
+
+def instances():
+    if start_ymd[0:4] == "2012":
+        return msm_instances_2012
+    elif start_ymd[0:4] == "2017":
+        return msm_instances_2017
+    elif start_ymd[0:4] == "2019":
+        return msm_instances_2019
 
 def msm_pp(msm):  # Prune parameters
+    print("@@@ msm=%s (%s)" % (msm, type(msm)))
+    print("@@@ msm_dests=%s (%s)" % (msm_dests, type(msm_dests)))
     pp = msm_dests[msm]
     p_pkts = isinstance(pp[2], int)  # True if pp[2] is an int
     if p_pkts:
@@ -241,9 +257,6 @@ def run_bash_commands(cmds):  # Execute bash commands, separated by \0a
     #if err:
     #    print("cmds %s;  stderr %s" % (cmds, err))
     return output, err
-
-#msms_2012 = [b"5001",b"5002",b"5004",b"5005",b"5006",b"5008",b"5009",
-#             b"5010",b"5011",b"5012",b"5015",b"5016",b"5017",b"5020"]
 
 def find_msm_files(keyword, reqd_date):
     existing_files = [];  ntb_a = []

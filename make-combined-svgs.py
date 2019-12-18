@@ -17,17 +17,47 @@ from timeit import default_timer as timer
 import config as c
 c.set_pp(False, c.msm_id)
 
+# Extra command-line parameters (after those parsed by getparamas.py):
+#
+#   +b  'bare', i.e. no ASN info available
+#   +n  value for min_tr_pkts
+#   reqd_msms may follow the + args
+
+# Command-line arg pasing to handle ... +b +n 60
+no_ASNs = min_tr_pkts = False
+reqd_msms = []
+
+if c.rem_cpx > 0:
+    x = c.rem_cpx
+    while x < len(sys.argv):
+        arg = sys.argv[x]
+        #print("x=%d, arg=%s" % (x, arg))
+        if arg == "+b":  # 'Bare' mode, no ASN info available
+            no_ASNs = True;  x += 1
+        elif arg == "+n":  # Value for min_tr_pkts 
+            min_tr_pkts = int(sys.argv[x+1]);  x += 2
+        elif sys.argv[x].isdigit():
+            while sys.argv[x].isdigit():
+                reqd_msms.append(int(sys.argv[x]))
+                x += 1
+                if x == len(sys.argv):
+                    break
+        else:
+            print("Unknown +x option (%s) !!!", arg);  exit()
+print("no_ASNs=%s, min_tr_pkts=%d)" % (no_ASNs, min_tr_pkts))
+
 graphs_fn = c.msm_graphs_fn(c.msm_id)
 node_fn = c.node_fn
 print("nodefn = %s" % node_fn)    
 
 print("graphs_fn = %s, dgs_stem = %s" % (graphs_fn, c.dgs_stem))
-dgs = dgs_ld.load_graphs(graphs_fn)  # Load a DestGraphs file
+dgs = dgs_ld.load_graphs_min_tr(graphs_fn, min_tr_pkts)  # Load a DestGraphs file
 print("BinGraphs: %s %s %d  %d %s" % (
     dgs.msm_id, dgs.dest, dgs.n_traces, dgs.mx_depth, dgs.prune_s))
 
+print("@1@ dgs.start_dt=%s, dgs.end_dt=%s" % (dgs.start_dt, dgs.end_dt))
 tb= timebins.TimeBins(dgs.start_dt, dgs.end_dt)
-#print("  len(bga) = %d" % len(dgs.bga))
+print("  len(bga) = %d" % len(dgs.bga))
 
 class Whole_Graph:
     node_f = None
@@ -36,7 +66,7 @@ class Whole_Graph:
         self.nodes = {};  self.edges = {}
         self.node_f = open(node_fn, "w")
         self.image_height = None
-        # When whole graph is read from neato plain ouput
+        # When whole graph is read from dot plain ouput
         #   by read_whole_graph(), nodes[] and edges[] are replaced
         #   by the names (i.e. pos or node pair)
 
@@ -48,7 +78,7 @@ class Whole_Graph:
             self.node_f.write("%s\n" % pp)
 
     def accumulate_graph(self, bg):  # Build wg from array of bgs
-        # When wg is complete, read x,y from neato plain output,
+        # When wg is complete, read x,y from dot plain output,
         #   using read_whole_graph - that's where we set
         #   node and edge x,y names (i.e. positions)
         for pp in bg.pops:  # pp is the pop's prefix
@@ -102,7 +132,6 @@ class Whole_Graph:
         self.nodes = {}  # Clear nodes before reading the plain (txt) file
         plain_fn = "%s/%s-whole.txt" % (dt_dir, c.dgs_stem)
         pf = open(plain_fn, "r")
-        print("pf = %s" % pf)
         self.max_x = self.max_y = 0
         state = 0
         for line in pf:
@@ -114,11 +143,11 @@ class Whole_Graph:
                 name = la[1].strip('"')
                 #print("la = ", la)
                 x = float(la[2]);  y = float(la[3])
+                self.x = x;  self.y = y  # Save (x,y) for node
                 if x > self.max_x:
                     self.max_x = x
                 if y > self.max_y:
                     self.max_y = y
-                #print("  %s  (%f,%f)" % (name, x,y))
                 self.nodes[name] = (x,y)
                     # pos string for dot
                 #print("%s (%f,%f) = %s" % (name, x,y, self.nodes[name]))
@@ -142,11 +171,12 @@ class Whole_Graph:
             #print("    self.nodes[nk] = %.3f,%.3f" % self.nodes[nk])
             (x,y) = self.nodes[nk]
             self.nodes[nk] = 'pos="%.3f,%.3f!"' % (x*xscale, y*yscale)
-            #print("-+- %s = %s" % (nk, self.nodes[nk]))
+            #?print("-+- %s = %s" % (nk, self.nodes[nk]))
 
-wg = Whole_Graph(node_fn)
+wg = Whole_Graph(node_fn);  node_dir = {}
+print("@@@@ c.target_bn_lo=%s, c.target_bn_hi=%s" % (c.target_bn_lo, c.target_bn_hi))
 for bn in range(c.target_bn_lo, c.target_bn_hi):
-    #print("--- bn=%d" % bn)
+    print("--- bn=%d" % bn)
     bg = dgs.bga[bn]
     wg.accumulate_graph(bg)
 
@@ -194,44 +224,47 @@ wg.close_whole()
 wg.draw_whole_graph(c.start_ymd, c.dgs_info)  # Make plain.txt file
 
 wg.read_whole_graph(c.start_ymd, c.dgs_info)  # Read x,y node co-ords from plain.txt
-
-no_asnf = no_whoisf = False
-print("c.asn_fn = %s\nc.whois_fn = %s" % (c.asn_fn, c.whois_fn))
-
-asn_fn = dgs_ld.find_usable_file(c.asn_fn())
-if asn_fn != '':
-    print("Will use asn-file %s" % asn_fn)
-else:
-    print("No asns file; run  pypy3 bulk-bgp-lookup.py <<<")
-    no_asnf = True
-
-whois_fn = dgs_ld.find_usable_file(c.whois_fn())
-if whois_fn != '':
-    print("Will use whois-file %s" % whois_fn)
-else:
-    print("No whois file; run  pypy3 get-whois-info.py <<<")
-    no_whoisf = True
-if no_asnf or no_whoisf:
-    exit()
+#print("wg.nodes{} = %s" % wg.nodes)  # Now have (x,y) for each node[name]
 
 asn_dir = {}  # Make asn and whois directories
-whoisf = open(whois_fn, 'r', encoding='utf-8')
-for n,line in enumerate(whoisf):
-    #print("%4d: %s" % (n, line.strip()))
-    asn, colour, name, cc, rr = line.strip().split()  # All strs
-    t_text = "%s: %s  (%s, %s)" % (asn, name, cc.lower(), rr)
-    asn_dir[asn] = (int(colour), t_text)  # t_text is a str
+no_asnf = no_whoisf = False
+if not no_ASNs:
+    print("c.asn_fn = %s\nc.whois_fn = %s" % (c.asn_fn(c.msm_id), c.whois_fn(c.msm_id)))
 
-node_dir = {}
-asnf = open(asn_fn, "r", encoding='utf-8')
-for line in asnf:
-    la = line.strip().split()
-    node_dir[la[0]] = la[1]
+    asn_fn = dgs_ld.find_usable_file(c.asn_fn(c.msm_id))
+    if asn_fn != '':
+        print("Will use asn-file %s" % asn_fn)
+    else:
+        print("No asns file; run  pypy3 bulk-bgp-lookup.py <<<")
+        no_asnf = True
 
-#for k in node_dir:
-#    print("%s = %s" % (k, node_dir[k]))
-    
-#mcs_draw_dir = "%s/%s-%sdrawings" % (c.start_ymd, c.msm_id, c.asn_prefix)
+    whois_fn = dgs_ld.find_usable_file(c.whois_fn(c.msm_id))
+    if whois_fn != '':
+        print("Will use whois-file %s" % whois_fn)
+    else:
+        print("No whois file; run  python3 get-whois-info.py <<<")
+        no_whoisf = True
+        print("? ? ? ?");  exit()
+#    if no_asnf:
+#        exit()
+        
+    if not no_whoisf:
+        whoisf = open(whois_fn, 'r', encoding='utf-8')
+        for n,line in enumerate(whoisf):
+            print("%4d: %s" % (n, line.strip()))
+            asn, colour, name, cc, rr = line.strip().split()  # All strs
+            t_text = "%s: %s  (%s, %s)" % (asn, name, cc.lower(), rr)
+            asn_dir[asn] = (int(colour), t_text)  # t_text is a str
+
+    asnf = open(asn_fn, "r", encoding='utf-8')
+    node_dir = {}
+    for line in asnf:
+        la = line.strip().split()
+        node_dir[la[0]] = la[1]
+#else:  # no_ASNs True, node_dir has been read from whole-nodes file
+#print("node_dir = %s" % node_dir)
+#print("asn_dir = %s" % asn_dir)
+
 mcs_draw_dir = c.draw_dir(c.msm_id)
 if not os.path.exists(mcs_draw_dir):
     os.makedirs(mcs_draw_dir)
@@ -253,7 +286,8 @@ for bn in range(c.target_bn_lo, c.target_bn_hi):
     print("--- drawing bin %d ---" % bn)
     dot_fn = "%s-%03d.dot" % (tb_dgs_stem, bn)
     svg_fn = "%s-%03d.svg" % (tb_dgs_stem, bn)
-    bg.draw_graph(dot_fn, svg_fn, mcs_draw_dir, tb_dgs_stem, # in dgs_ld.py
+    bg.draw_graph(no_ASNs, dot_fn, svg_fn, mcs_draw_dir,
+        tb_dgs_stem, # in dgs_ld.py
         bn, wg, dest, node_dir, asn_dir, changing_nodes, last_bg)
 
     #na = ["neato", "-n2", "-Gsplines", "-Tsvg", dot_fn, "-o", svg_fn]
@@ -264,7 +298,7 @@ for bn in range(c.target_bn_lo, c.target_bn_hi):
     call(na)
     b_et = timer()
     print("Bin %3d drawn, %.2f seconds" % (bn, b_et-b_st))
-    os.remove(dot_fn)
+    #?? os.remove(dot_fn)
     #if bn == 3:  # Only draw first 4 bins
     #    break
 end_t = timer()

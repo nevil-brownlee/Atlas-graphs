@@ -30,10 +30,7 @@ draw_dir = c.draw_dir(msm_id)
 set_id = c.slide_set_id()
 cap_stem = set_id
 dgs_stem = c.dd_dgs_stem()
-<<<<<<< HEAD
 print("dgs_stem = %s" % dgs_stem)
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 bin_list = glob.glob(dgs_stem + "-*.svg")
 r = re.search(r'-(\d+)\.svg', bin_list[0])

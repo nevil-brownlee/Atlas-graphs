@@ -1,17 +1,10 @@
-<<<<<<< HEAD
 # 1552, Fri 13 Dec 2019 (NZDT)
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 # 1627, Fri  3 Nov 2017 (NZST)
 #
 # get-probe-lists.py:  Makes list of probes to use for a dataset
 #    python3 get-probe-lists.py  (uses params.txt values to determine dataset)
 #
-<<<<<<< HEAD
 # Copyright 2019, Nevil Brownlee,  U Auckland | RIPE NCC
-=======
-# Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
 # Documentation at https://github.com/RIPE-NCC/ripe-atlas-cousteau
 
@@ -25,14 +18,11 @@ import config as c
 filters = {"area": "WW", "tags":"system-ipv4-works"}
 probes = ProbeRequest(**filters)  # About 30k probes!
 
-<<<<<<< HEAD
 p_fa = c.probes_fn().split("/")  # Make sure the start_ymd dire ctory exists
 pd = p_fa[1]
 if not os.path.exists(pd):
     os.makedirs(pd)
 
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 pn_dict = {}
 for probe in probes:
     pid = probe["id"];  asn_v4 = probe["asn_v4"]

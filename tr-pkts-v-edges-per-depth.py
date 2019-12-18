@@ -49,9 +49,9 @@ def plot_stacked(msm_objs, msm_dests, bn):
     n_depths = len(depths)
 
     tpt = []; tlabels = [] # depths patch tuples and colours
-    for t in range(n_depths-1):
-        r = n_depths-2 - t
-        #print("  t=%d, r=%d" % (t, r))
+    for t in range(n_depths):
+        r = n_depths-1 - t
+        print("  t=%d, r=%d" % (t, r))
         tpt.append(patches.Patch(color=colours[r]))  #   %nc]))
         tlabels.append(depths[r])
     if len(msm_objs) <= 3:
@@ -118,7 +118,7 @@ def plot_stacked(msm_objs, msm_dests, bn):
             elif msm_id == 5015:
                 xy1.set_xlim([0.1, 59])
                 xy1.set_xticks([10, 20, 30, 40, 50])
-        else:
+        elif start_ymd == '20170220':
             if msm_id == 5017 or msm_id == 5005 or msm_id == 5004:
                 xy1.set_xlim([0.1, 99])
                 xy1.set_xticks([10, 30, 50, 70, 90])
@@ -131,6 +131,13 @@ def plot_stacked(msm_objs, msm_dests, bn):
             elif msm_id == 5015:
                 xy1.set_xlim([0.1, 109])
                 xy1.set_xticks([15, 35, 55, 75, 95])
+        else:
+            if msm_id == 5016:
+                xy1.set_xlim([0.1, 49])
+                xy1.set_xticks([5, 15, 25, 35, 45])
+            else:
+                xy1.set_xlim([0.1, 123])
+                xy1.set_xticks([10, 30, 50, 70, 90, 110])
         elo = 18;  ehi = 1800
         ylo = math.log(elo)/math.log(10)
         yhi = math.log(ehi)/math.log(10)
@@ -150,7 +157,7 @@ def plot_stacked(msm_objs, msm_dests, bn):
             alpha=0.8, linewidth=1, rwidth=0.8)
 
     #pplt.show()
-    plot_fn = "%s/edges-per-depth-v-min-tr-pkts.svg" %(start_ymd)
+    plot_fn = "%s/tr-pkts-v-edges-per-depth.svg" % start_ymd
     pplt.savefig(plot_fn)
 
 

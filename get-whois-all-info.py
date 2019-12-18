@@ -172,7 +172,7 @@ aaf.close()
 kv_list = []
 for k in asn_d:
     kv_list.append( (asn_d[k], asn_d[k].count) )
-print("kv_list=%s" % kv_list)
+#print("kv_list=%s" % kv_list)
 
 whois_fn = g_fn = "%s/whois-all-%s-%s-%s-%s-%s.%s" % (dir, 
         ymd, hhmm, nbins, mx_depth, prune_s, ftype)

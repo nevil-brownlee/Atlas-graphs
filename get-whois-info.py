@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 # 1711, Wed  3 Jul 2019 (NZST)
-=======
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 # 1605, Wed  7 Sep 2016 (NZDT)
 #
 # get-whois-info.py:  Looks up whois info for ASNs
@@ -152,21 +149,12 @@ class ASN:
                     break
         return 0
 
-<<<<<<< HEAD
 af = open(c.asn_fn(c.msm_id), "r")
 print("Will read asns file %s" % af)
 
 asn_d = {}  # Dictionary of ASN objects, key 
 
 for line in af:  # Get dictionary of ASNs, with counts for each
-=======
-af = open(c.asn_fn(), "r")
-print("Will write whois info file %s" % af)
-
-asn_d = {}
-
-for line in af:
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
     la = line.strip().split()
     addr = la[0];  asn = la[-1]
     if asn in asn_d:
@@ -177,7 +165,6 @@ af.close()
 
 kv_list = []
 for k in asn_d:
-<<<<<<< HEAD
     kv_list.append( (asn_d[k], asn_d[k].count) )
 
 whoisfn = c.whois_fn(c.msm_id)
@@ -194,35 +181,12 @@ for kv in sorted(kv_list, reverse=True):
         r = asn_obj.get_http()
     if r != 0:
         print("%2d %s:  Failed" % (n, asn_obj.asn))
-=======
-    #print("key %s, count %d" % (k, asn_d[k]))
-    kv_list.append( (asn_d[k].count, asn_d[k]) )
-
-
-whoisf = open(c.whois_fn(), "w", encoding='utf-8')
-n = 0
-for kv in sorted(kv_list, reverse=True):
-    n += 1
-    asn_obj = kv[1]
-    colour = 0
-    print("\nasn %s - - -" % asn_obj.asn)
-    r = asn_obj.get_whois()
-    if r != 0:
-        r = asn_obj.get_http()
-    if r == 0:
-        print("%2d %d:  %s, %s" % (n, kv[0], asn_obj.asn, asn_obj.address))
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
     colour = n  # asn_colours in dgs_ld.py
     if colour > 20:
         colour = 0  # black
-<<<<<<< HEAD
     whoisf.write("%d %s %d %s %s %s\n" % (
         n, asn_obj.asn, colour, asn_obj.name, asn_obj.cc, asn_obj.registry))
-=======
-    whoisf.write("%s %d %s %s %s\n" % (
-        asn_obj.asn, colour, asn_obj.name, asn_obj.cc, asn_obj.registry))
->>>>>>> 92c20d888b97d193e9f23a45066c314830055385
 
     r = random.random()
     t = -1.0*math.log(r)

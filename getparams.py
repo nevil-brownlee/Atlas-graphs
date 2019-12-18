@@ -82,7 +82,7 @@ class AgParams:  # Atlas graph Parameters
             self.write_stats = False
             
         for o, a in opts:
-            print("o >%s<, a >%s<" % (o,a))
+            #print("o >%s<, a >%s<" % (o,a))
             if o in ("-y", "--start_ymd"):
                 self.start_ymd = a
             elif o in ( "-h", "--start_hhmm"):

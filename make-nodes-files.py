@@ -1,3 +1,4 @@
+# 1633, Wed 18 Dec 2019 (NZDT)
 # 1709, Tue 23 Oct 2018 (NZDT)
 #
 # Make graphs- files for a spcified date
@@ -10,8 +11,7 @@ import subprocess
 import config as c
 c.set_pp(False, c.msm_id)  # Set prune parameters
 
-#reqd_date = b"20170220"  # Has a week of *48 files for 5005 (only)
-reqd_date = b"20120222"  # b"20120501"  b"20120507"
+reqd_date = c.start_ymd
 
 egf, gntb = c.find_msm_files("graphs", reqd_date)
 print("egf = %s" % egf)
