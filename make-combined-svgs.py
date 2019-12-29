@@ -235,14 +235,14 @@ if not no_ASNs:
     if asn_fn != '':
         print("Will use asn-file %s" % asn_fn)
     else:
-        print("No asns file; run  pypy3 bulk-bgp-lookup.py <<<")
+        print("No asns file; run  bulk-bgp-lookup.py <<<")
         no_asnf = True
 
     whois_fn = dgs_ld.find_usable_file(c.whois_fn(c.msm_id))
     if whois_fn != '':
         print("Will use whois-file %s" % whois_fn)
     else:
-        print("No whois file; run  python3 get-whois-info.py <<<")
+        print("No whois file; run  get-whois-info.py <<<")
         no_whoisf = True
         print("? ? ? ?");  exit()
 #    if no_asnf:

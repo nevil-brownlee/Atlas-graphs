@@ -50,25 +50,30 @@ ds_stem = "%d-%s-%s" % (msm_id, start_ymd, ft_range)
 
 msm_nbrs = [5005, 5015, 5006, 5004, 5016, 5017]  # Decreasing nbr of edges
 
-msm_dests = {5017: ("ronin.atlas",18,20),  # name, prune max, mx_depth
-                                           # pp[2] of 80 is about 0.3%
-             # Note: in 20191211 data, a few IP addrs reached mx_depth (15)!
-             5005: ("i.root",18,20),   #  70  number of sites. Nov 2019
-             5016: ("j.root",18,20),   # 104
-             5006: ("m.root",18,20),   #   9
-             5015: ("h.root",18,20),   #   2
-             5004: ("f.root",18,20),   # 241
+c_mx_depth = 15  # mx_depth in config file
+if start_ymd[0:4] >= "2019":
+    c_mx_depth = 18  # Changed for 2019 datasets
+c_prune_max = 20
 
-             5001: ("k.root",18,20),   #  70
-             5002: ("tt01.ripe.net",18,20),
-             5008: ("labs.ripe.net",18,20),
-             5009: ("a.root",18,20),   #  28
-             5010: ("b.root",18,20),   #   3
-             5011: ("c.root",18,20),   #  10
-             5012: ("d.root",18,20),   # 153
-             5016: ("j.root",18,20),   # 164
-             5017: ("ronin.atlas",18,20),
-             5020: ("carson",18,20) }
+msm_dests = {5017: ("ronin.atlas",c_mx_depth,c_prune_max,""),
+                                           # pp[2] of 80 is about 0.3%
+             # Note: in c_prune_max191211 data, a few IP addrs reached mx_depth (15)!
+             5005: ("i.root",c_mx_depth,c_prune_max,"192.36.148.17"),
+             5016: ("j.root",c_mx_depth,c_prune_max,"192.58.128.30"),
+             5006: ("m.root",c_mx_depth,c_prune_max,"202.12.27.33"),
+             5015: ("h.root",c_mx_depth,c_prune_max,"198.97.190.53"),
+             5004: ("f.root",c_mx_depth,c_prune_max,"192.5.5.241"),
+
+             5001: ("k.root",c_mx_depth,c_prune_max,"193.0.14.129"),
+             5002: ("tt01.ripe.net",c_mx_depth,c_prune_max,""),
+             5008: ("labs.ripe.net",c_mx_depth,c_prune_max,""),
+             5009: ("a.root",c_mx_depth,c_prune_max,"198.41.0.4"),
+             5010: ("b.root",c_mx_depth,c_prune_max,"199.9.14.201"),
+             5011: ("c.root",c_mx_depth,c_prune_max,"192.33.4.12"),
+             5012: ("d.root",c_mx_depth,c_prune_max,"199.7.91.13"),
+             5016: ("j.root",c_mx_depth,c_prune_max,"192.58.128.30"),
+             5017: ("ronin.atlas",c_mx_depth,c_prune_max,""),
+             5020: ("carson",c_mx_depth,c_prune_max,"") }
 
 # Instances data from www.root-servers.org
 msm_instances_2012 = {5017: 1, 5005: 50, 5006: 8, 5015: 2, 5004: 58, 5016: 127,
@@ -92,8 +97,8 @@ def instances():
         return msm_instances_2019
 
 def msm_pp(msm):  # Prune parameters
-    print("@@@ msm=%s (%s)" % (msm, type(msm)))
-    print("@@@ msm_dests=%s (%s)" % (msm_dests, type(msm_dests)))
+    #print("@@@ msm=%s (%s)" % (msm, type(msm)))
+    #print("@@@ msm_dests=%s (%s)" % (msm_dests, type(msm_dests)))
     pp = msm_dests[msm]
     p_pkts = isinstance(pp[2], int)  # True if pp[2] is an int
     if p_pkts:
@@ -128,7 +133,7 @@ def gzm_gz_fn(st_ymd, msm_id):  # fn for gzm.gz file
 
 # build-graphs.py  config
 
-stats_mx_depth = 15;  stats_min_tr_pkts = 10  # Prune parameters
+stats_mx_depth = c_mx_depth;  stats_min_tr_pkts = 10  # Prune parameters
 
 def set_pp(stats_file, msm_id):  # True to use stats file instead of graphs file
     global dname, mx_depth, prune_pc, p_pkts, prune_s, \
@@ -260,6 +265,7 @@ def run_bash_commands(cmds):  # Execute bash commands, separated by \0a
 
 def find_msm_files(keyword, reqd_date):
     existing_files = [];  ntb_a = []
+    print("find_msm_files >>> %s (%s), %s (%s)" % ( keyword, type(keyword), reqd_date, type(reqd_date)))
     cmd = b"ls " + reqd_date.encode('utf-8') + b"/" + keyword.encode('utf-8') + b"-50*.txt" 
     print("--cmd = %s" % cmd)
     output, err = run_bash_commands(cmd)

@@ -14,6 +14,10 @@ from dgs_ld import find_usable_file
 import config as c
 c.set_pp(False, c.msm_id)  # Set prune parameters
 
+enf, nntb = c.find_msm_files("nodes", c.start_ymd)
+print("nodes files have %s timebins" % nntb)
+print("existing nodes files = %s" % enf)
+
 bgp_fn = c.bgp_fn
 print("bgp_fn = %s" % bgp_fn)
 bfa = bgp_fn.split('.')
@@ -33,12 +37,10 @@ for fn in bfa_files:
             bgp_fn = fn
 print("   using file %s <<<" % bgp_fn)
 
-reqd_date = b"20120222"  # "20120517" b"20120507"
-rq_date_s = reqd_date.decode('utf-8')
-
-rtree=Radix()
-
+####reqd_date = b"20120222"  # "20120517" b"20120507"
+rq_date_s = c.start_ymd
 n = 0
+rtree = Radix()
 with gzip.open(bgp_fn, 'rb') as zif:
     tb_n = 0;  tb = None
     for ln in zif:
@@ -70,9 +72,37 @@ with gzip.open(bgp_fn, 'rb') as zif:
 sys.stderr.write("finished loading BGP data\n")
 sys.stderr.write("Loaded %d lines" % n)
 
-enf, nntb = c.find_msm_files("nodes", reqd_date)
-print("nodes files have %s timebins" % nntb)
-print("existing nodes files = %s" % enf)
+with gzip.open(bgp_fn, 'rb') as zif:
+    tb_n = 0;  tb = None
+    for ln in zif:
+        n += 1
+        line = ln.decode("utf-8", "replace")
+        la = line.strip().split()
+        if len(la) != 2:  # BGP record had no Origin AS !
+            print("line len != 2 >%s<" % la)
+        else:
+            pfx = str(la[0]);  origin = str(la[1])
+        #print("pfx = %s, origin = %s" % (pfx, origin))
+        #pfxa = pfx.split("'")
+        #print("pfxa = %s" % pfxa)
+        #if len(pfxa) != 3:
+        #    print(">>> pfx = >%s<, pfxa = %s" % (pfx, pfxa))
+        #    continue
+        #pfx = pfxa[1]  # python3; now without b'and closing ' !!!
+
+        try:
+            rnode = rtree.search_exact( pfx )
+            if rnode:
+               rnode.data['origin'].add( origin )
+            else:
+                rnode = rtree.add( pfx )
+                rnode.data['origin'] = set([ origin ])
+        except:
+            print("search_exact failed for pfx = %s" % pfx)
+
+sys.stderr.write("finished loading BGP data\n")
+sys.stderr.write("Loaded %d lines" % n)
+
 for msm_id in enf:
     print("msm_id = %s" % msm_id)
     asn_fn = c.asn_fn(int(msm_id))

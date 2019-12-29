@@ -84,31 +84,6 @@ print("Starting: c.msm_id = %s, reqd_msms = %s" % (c.msm_id, reqd_msms))
 
 n_bins = c.n_bins*c.n_days
 
-#def plot_stat(plt_title, stat1_data, stat2_data, stat1_name, stat2_name):
-#    n_bins = len(stat1_data)
-#    fig, ax1 = pplt.subplots()
-#
-#    ax1.set(xlabel='timebin', ylabel=stat1_name, title = plt_title)
-#    xv = np.concatenate(([0], np.cumsum(np.ones(n_bins-1))))
-#    ax1.grid()
-#
-#    colour = 'tab:red'
-#    ax1.set_ylim(9100, 10000)
-#    ax1.set_ylabel(stat1_name, color=colour)
-#    ax1.plot(xv, stat1_data, color=colour)
-#
-#    ax2 = ax1.twinx()  # Share same x axis
-#    colour = 'tab:blue'
-#    ax2.set_ylabel(stat2_name, color=colour)
-#    #ax2.set_ylim(12200, 12600)  # n_dup_traces
-#    #ax2.set_ylim(1280000, 1320000)  # t_hops
-#    ax2.set_ylim(128500, 132000)  # t_addrs
-#    ax2.plot(xv, stat2_data, color=colour)
-#
-#    fig.tight_layout()
-#    fig.savefig("test.svg")
-#    #pplt.show()
-
 msm_gis = []
 
 for msm_id in reqd_msms:
@@ -150,13 +125,6 @@ sf.write("python3 msm-performance.py -y %s -n %s -d 1 +i %s\n\n" % (
 def gi_stats(gi, a_name):
     return gi.stats[a_name]
 
-#def print_stat(a_name, stat_fn):
-#    sf.write("%14s" % a_name)  #, end="")
-#    for gi in msm_gis:
-#        v = stat_fn(gi, a_name)
-#        mean = np.mean(v);  sd = np.std(v)
-#        sf.write("%7d|%-4d " % (mean, sd))  #, end="")
-#    sf.write("\n")
 def print_stat(a_name, stat_fn):
     # write mean()|stddev() of statistic vector for stat_fn
     sf.write("{:>15}".format(a_name))
@@ -176,16 +144,12 @@ sf.write("{:>17}".format('destination  '))
 for msm_id in reqd_msms:
     sf.write("{:^13}".format(c.msm_dests[msm_id][0]))
 sf.write("\n")
+sf.write("{:>17}".format('IPv4 address '))
+for msm_id in reqd_msms:
+    sf.write("{:^13}".format(c.msm_dests[msm_id][3]))
+sf.write("\n")
 
 sf.write("{:>17}".format('instances  '))
-#if c.start_ymd[0:4] == "2012":
-#    instances = c.msm_instances_2012
-#elif c.start_ymd[0:4] == "2017":
-#    instances = c.msm_instances_2017
-#elif c.start_ymd[0:4] == "2019":
-instances = c.instances()
-print("*** instances = %s" % instances)
-#    instances = c.msm_instances_2017
 for msm_id in reqd_msms:
     sf.write("{:^13}".format(instances[msm_id]))
 sf.write("\n\n")

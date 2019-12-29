@@ -27,7 +27,7 @@ for msm_id in egf:
     msm_id_b = msm_id.encode('utf-8')
     ntb = gntb.encode('utf-8')
     print("msm_id = %s, gntb = %s" % (msm_id_b, gntb))
-    cmd = b"python3 make-combined-svgs.py -y " + reqd_date + \
+    cmd = b"python3 make-combined-svgs.py -y " + reqd_date.encode('utf-8') + \
         b" -n " + ntb + b" -m " + msm_id_b
     print("cmd = >%s<" % cmd)
 
