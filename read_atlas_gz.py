@@ -1,32 +1,58 @@
+# 1632, Wed 19 Feb 2020 (NZDT)
 # 1349, Tue 17 Jun 2016 (NZST)
 #
 # read_atlas_gz.py: reads atlas json data from .gz file
 #
-# Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC
+# Copyright 2020, Nevil Brownlee,  U Auckland | RIPE NCC
 
 import json, string, sys, copy
 
-import ipp  # So that we can test for RFC1918 addresses!
+import ipp  # From python-libtrace, so we can test for RFC1918 addresses!
 import traceroute as tr
 import timebins
 
 debug_traces = False
+#t_addr = "178.49.128.6"  # In trace 2, hop 5
+t_addr = "81.23.23.77"
 
-def read_tr_file(tb, f_tb_n, line, mx_traces):
+def p_trace(nt, hops):  #IC  in_counts testing
+    print("trace %d" % nt)
+    for hn,h in enumerate(hops):
+        for rn,r in enumerate(h.responders):
+            marker = ""
+            adr = str(r.ip_addr)
+            if adr == t_addr:
+                marker = " <<<"
+            if rn == 0:
+                print("  %2d: %s (%d) %s" % (
+                    hn, adr, len(r.rtts), marker))
+            else:
+                print("    : %s (%d) %s" % (
+                    adr, len(r.rtts), marker))
+
+def read_tr_file(tb, f_tb_n, j_line, mx_traces):
         # mx_traces zero -> read whole file
         # Reads Traces into tb.bins[f_tb_n], i.e. for timein tb_n
         # Each line contains data from start_ to stop_time, i.e.one timebin
     empty_traces = too_short_traces = nt = 0
-    results = json.loads(line)  # Reads all traces for tb
+    ta = []  # Append traces from file to ta
+    results = json.loads(j_line)  # Reads all traces for tb
     for pr in results:  # Probe
         #if nt % 1000 == 0:
         #    sys.stdout.write(". ");  sys.stdout.flush()
         msm_id = int( pr['msm_id'])
         prb_id = int( pr['prb_id'])
         ts = int( pr['timestamp'])
+        bin_nbr = tb.bin_nbr(ts)
+        nt += 1
+        #if nt <= 4:
+        #    print("rtf: nt %d, ts %d, bin %d" % (nt, ts, bin_nbr))
+        #if bin_nbr == 2:
+        #    exit()
+        dest = "?";  empty_traces = too_short_traces = 0
         dest = ipp.from_s(pr['dst_addr'])
-        #print("=== nt=%d, f_tb_n=%d, msm_id=%d, probe_id=%d, src=%s, ts=%d, dest=%s, proto=%s" %(
-        #    nt, f_tb_n, msm_id, prb_id, pr['src_addr'], ts, dest,  pr['proto']))
+        #print("=== nt=%d, f_tb_n=%d, msm_id=%d, probe_id=%d, src=%s, ts=%d, >bin_nbr %d<, dest=%s, proto=%s" %(
+        #    nt, f_tb_n, msm_id, prb_id, pr['src_addr'], ts, bin_nbr, dest,  pr['proto']))
 
         hops = [];  empty_hops = 0
         result = pr['result']
@@ -68,7 +94,7 @@ def read_tr_file(tb, f_tb_n, line, mx_traces):
                     #    rtt = p['x'].encode('ascii','replace')
                     loss += 1
                 if addr:
-                    if addr in resp_d:  # IPprefixes _are_ hashable ## now strings
+                    if addr in resp_d:  # IPprefixes _are_ hashable
                         resp_d[addr].rtts.append(rtt)
                     else:
                         resp_d[addr] = tr.Responder(addr, [rtt])
@@ -77,6 +103,11 @@ def read_tr_file(tb, f_tb_n, line, mx_traces):
             if len(resp_a) == 0: 
                 empty_hops += 1
             hops.append(tr.Hop(hn, loss, resp_a))
+        
+        #for hn,h in enumerate(hops):  # Look for t_addr
+        #    for r in h.responders:
+        #        if str(r.ip_addr) == t_addr:
+        #            p_trace(nt, hops)
 
         if len(hops) == empty_hops:  # No valid hops
             empty_traces += 1
@@ -84,17 +115,18 @@ def read_tr_file(tb, f_tb_n, line, mx_traces):
             too_short_traces += 1
         else:
             t = tr.Trace(msm_id, prb_id, ts, dest, hops)
-            #bn = tb.bin_nbr(t.ts)
             # ts from sample in a half-hour json record may be outside
-            #   the bin by +/- 1 second!
-            #if f_tb_n >= len(tb.bins):
-            #    print("+++ f_tb_n = %d, len(tb.bins) = %d" % (f_tb_n, len(tb.bins)))
-            tb.bins[f_tb_n].append(t)
-        nt += 1  # Next Trace
+            #   the bin by >~ 1 second!
+            if bin_nbr >= len(tb.bins):
+                print("+++ f_tb_n = %d, len(tb.bins) = %d" % (
+                    f_tb_n, len(tb.bins)))
+            else:  # Bin nbr in range [0:n_bins-1]
+                ta.append(t)
 
-    return nt, dest, empty_traces, too_short_traces
+    #print("BIN_NBR %d, f_tb_n %d" % (bin_nbr, f_tb_n))
+    return ta, nt, bin_nbr, dest, empty_traces, too_short_traces
 
-def cleanup_trace(t, tn, mx_hops):  # tn = index in bin
+def cleanup_trace(t, tn):  # tn = index in bin
     # Remove rfc1918 addresses, and duplicate responder address
     bad = False  # Has rfc1918 address or recurring addresses
     if len(t.hops) == 0:
@@ -102,13 +134,12 @@ def cleanup_trace(t, tn, mx_hops):  # tn = index in bin
     
     n_1918_deleted = addrs_deleted = hops_deleted = 0
     total_addrs = total_hops = 0
-    if debug_traces:  # Before
+    if debug_traces:   # Before
         print("Before")
         print("Trace %d: ts=%d, dest=%s" % (tn, t.ts, t.dest))
         for j,h in enumerate(t.hops):
             h.print_hop(j)
-        print()
-        
+        print()        
     cycle = 0
     while True:  # Repeat until all duplicates are removed
         cycle += 1
@@ -173,10 +204,11 @@ def cleanup_trace(t, tn, mx_hops):  # tn = index in bin
         else:
             break
 
-    # Delete all but the last mx_hops+1 hops
-    if len(t.hops) > mx_hops+1:
-        new_hops = t.hops[-(mx_hops+1):]
-        t.hops = new_hops
+#?    # Delete all but the last mx_hops+1 hops
+#?    mx_hops = len(t.hops)
+#?    if len(t.hops) > mx_hops+1:
+#?        new_hops = t.hops[-(mx_hops+1):]
+#?        t.hops = new_hops
 
     # Check for loops in the trace
     resp_addrs = []
@@ -201,7 +233,9 @@ def cleanup_trace(t, tn, mx_hops):  # tn = index in bin
     return n_1918_deleted, addrs_deleted, hops_deleted, \
         total_addrs, total_hops, succ
 
-def cleanup_bin(tb, bn, mx_hops):
+def cleanup_bin(tb, bn):
+    if bn >= len(tb.bins):  # Ignore bins outside range [0:n_bins-1]
+        return
     t_traces = t_1918_deleted = t_addrs_deleted = t_hops_deleted = 0
     t_addrs = t_hops = t_succ = 0
     #print("cleanup_bin(%d), tb=%s" % (bn, tb))
@@ -211,7 +245,7 @@ def cleanup_bin(tb, bn, mx_hops):
             sys.stdout.write("- ");  sys.stdout.flush()
         #print("bn=%d, tn=%d, t = %s" % (bn, tn, t))
         n_1918_deleted, addrs_deleted, hops_deleted, n_addrs, \
-            n_hops, succ = cleanup_trace(t, tn, mx_hops)
+            n_hops, succ = cleanup_trace(t, tn)
 
         t_1918_deleted += n_1918_deleted
         t_addrs_deleted += addrs_deleted

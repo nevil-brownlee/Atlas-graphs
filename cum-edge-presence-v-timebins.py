@@ -14,47 +14,50 @@ import matplotlib.pyplot as pplt
 from matplotlib import patches
 import math, datetime
 
-import e_p_ni_gi  # Edge, Path, NodeInfo and GraphInfo classes
+import graph_info  # Edge, Path, NodeInfo and GraphInfo classes
 import dgs_ld
 
 import config as c
-c.set_pp(False, c.msm_id)  # Work on graphs-* file
- 
+
+reqd_ymds = [];  reqd_msms = [];  pc_graph = False
+pp_names = "y! m! p a"  # indexes 0 to 3
+pp_ix, pp_values = c.set_pp(pp_names)  # Set up config info
+mx_depth = c.draw_mx_depth  # Default parameters for drawing
+mn_trpkts = c.draw_mn_trpkts
+asn_graphs = not c.full_graphs
+for n,ix in enumerate(pp_ix):
+    if ix == 0:    # y  (yyyymmdd) dates
+        print("y parameter read")
+        reqd_ymds = pp_values[n]
+    elif ix == 1:  # m  (50xx) msm_ids
+        reqd_ymds = c.check_msm_ids(pp_values[n])
+    elif ix == 2:  # p  Convert edge counts to % of all edges
+        pc_graph = pp_values[n]
+    elif ix == 3:  # a sets full_graphs F to use ASN graphs
+        asn_graphs = True;  c.set_full_graphs(False)
+if len(reqd_ymds) == 0:
+    reqd_ymds = [c.start_ymd]
+if len(reqd_msms) == 0:
+    reqd_msms = [c.msm_id]
+print("reqd_ymds %s, reqd_msms %s" % (reqd_ymds, reqd_msms))
+
 #n_bins = 48  # 1 day
 #n_bins = 48*3  # 3 days
 n_bins = c.n_bins*c.n_days  # 1 week
 
-pc_graph = True   # Convert edge counts to % of all edges
-inter_asn = True
 sup_title = True
-
-#asn_fn = c.asn_dests_fn(c.msm_id)
-#print("asn_fn = %s" % asn_fn)
-#r = dgs_ld.find_usable_file(asn_fn)
-#print("r = >%s<" % r)
-#exit()
 
 node_dir = {}  # Dictionary  IPprefix -> ASN
 no_asn_nodes = {}
-##if not c.full_graphs:  # Read ASN -> prefix mapping from file
-if c.full_graphs:  # Read prefix -> ASN mapping from file
-    for msm_id in c.msm_nbrs:
-        asn_fn = c.asn_dests_fn(msm_id)
-        print("asn file = %s <<<<<<" % asn_fn)
-        af = dgs_ld.find_usable_file(asn_fn)
-        print("      af = %s" % af)
-        asnf = open(af, "r", encoding='utf-8')
-        for line in asnf:
-            node, asn = line.strip().split()
-            node_dir[node] = asn
-            #print("node_dir key %s, val %s" % (node, node_dir[node]))
 
-def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was seen)
+def plot_asn_counts(pca, inter_ca, ids, ymd):  # Plot counts (nbr of times pc[x] was seen)
     #  pca and inter_ca are np 1D arrays of counts, one for each msm_id
     #ymax = {5017:80, 5005:145, 5016:100, 5004:920, 5006:1270, 5015:1030}  # y axis upper limits
     xv = np.cumsum(np.ones(n_bins+1))  # x values
     #print("      xv = %s" % xv)
-    #print("      pc_graph = %s" % pc_graph)
+    print("      pc_graph = %s" % pc_graph)
+    #print("pca = %s" % pca)
+    #print("inter_ca = %s" % inter_ca)
     pcc = [];  inter_cc = []
     same_max = [];  inter_max = []
     for mx in range(0,len(pca)):
@@ -62,6 +65,8 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
         icc = np.cumsum(inter_ca[mx])
         same_max.append(cc[-1]);  inter_max.append(icc[-1])
         if pc_graph:
+            ##print("cc = %s" % cc)
+            ##print("icc = %s" % icc)
             tcounts = cc[-1]+icc[-1]  # Total counts
             cc = cc*(100.0/tcounts)
             icc = icc*(100.0/tcounts)
@@ -72,12 +77,13 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
         which = "percent"
     if not c.full_graphs:
         title = "Full graph: edge presence (%s)" % which
-        pfn = "inter-asn-full-%s.svg" % which
+        pfn = "%s/inter-asn-full-%s.svg" % (ymd, which)
     else:
-        #title = "ASN graph: edge presence (%s)" % which
+        dt = c.date_from_ymd(ymd, c.start_hhmm)
         title = "Cumulative Edge Presence:  %s" % \
-                c.start_time.strftime("%a %d %b %Y (UTC)")
-        pfn = "inter-asn-%s.svg" % which
+                dt.strftime("%a %d %b %Y (UTC)")
+        pfn = "%s/cum-edge-presence-%s.svg" % (ymd, which)
+    print("pfn = %s" % pfn)
 
     if len(ids) <= 3:
         rows = 1;  cols = len(ids)
@@ -88,7 +94,7 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
     #print("+1+ pc %s, len(ids) %d, rows %d, cols %d" % (pc_graph, len(ids), rows, cols))
 
     if sup_title:
-        fig, axes = pplt.subplots(rows, cols, figsize=(w,h))  # Inches (?)
+        fig, axes = pplt.subplots(rows, cols, figsize=(w,h))  # Inches
         if len(ids) <= 3:
             pplt.subplots_adjust(left=0.125, bottom=0.135, right=None, top=0.9,
                                  wspace=0.5, hspace=0.85)
@@ -97,7 +103,7 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
                                  wspace=0.5, hspace=0.35)
         fig.suptitle(title, fontsize=14, horizontalalignment='center')
     else:
-        fig, axes = pplt.subplots(rows, cols, figsize=(w,h))  # Inches (?)
+        fig, axes = pplt.subplots(rows, cols, figsize=(w,h))  # Inches
         if len(ids) <= 3:
             pplt.subplots_adjust(left=0.125, bottom=0.135, right=None, top=0.9,
                                  wspace=0.5, hspace=0.85)
@@ -130,7 +136,7 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
         xy.set_xlim(-int(0.25*xtick_incr), int(8.45*xtick_incr))  # x axis lims
         xy.tick_params(axis='y', labelsize=tkp)
         if pc_graph:
-            ymax = 70
+            ymax = 80  #? 70
         else:
             cc_max = np.max(pcc[f])
             icc_max = np.max(inter_cc[f])
@@ -147,27 +153,47 @@ def plot_asn_counts(pca, inter_ca, ids):  # Plot counts (nbr of times pc[x] was 
         xy.grid()
     pplt.savefig(pfn)
 
+for ymd in reqd_ymds:
+    c.start_ymd = ymd  # fn_ functions in config.py will use ymd <<<
+    ids = [];  pca = [];  inter_ca = []
+    for msm_id in reqd_msms:
+        print("\n= = = = = = = = = =  %s  %d" % (ymd, msm_id))
+        node_dir = {}  # Dictionary  IPprefix -> ASN
+        no_asn_nodes = {}
+        asn_ids = {"unknown":0}  # Dictionary of ASN ids, indexed by ASN name
+        asns_fn = dgs_ld.find_usable_file(c.asns_fn(msm_id))
+        if asns_fn != '':  # Read prefix->ASN from file
+            asnf = open(asns_fn, "r", encoding='utf-8')
+            n_nodes = 0
+            for line in asnf:
+                la = line.strip().split()
+                name = la[0];  asn = la[1]
+                node_dir[node] = asn;  n_nodes += 1
+            #    print("node_dir key %s, val %s" % (node, node_dir[node]))
+                if asn not in asn_ids:
+                    asn_ids[asn] = len(asn_ids)
+            print("asns file has %d nodes and %d asns" % (n_nodes, len(node_dir)))
+        else:
 
-ids = [];  pca = [];  inter_ca = []
-#for msm_id in c.msm_nbrs:
-#for msm_id in [5005]:  # 5004]:
-#for msm_id in [5017, 5005, 5016]:
-for msm_id in [5017, 5005, 5016, 5004, 5006, 5015]:
-    print("= = = = = = = = = =")
-    all_edges = []  # List of all 'interesting' edges for all msm_ids
-    msm_dest = c.msm_dests[msm_id][0]
-    
-    gf = e_p_ni_gi.GraphInfo(msm_id, all_edges, node_dir, n_bins)
-    print("%d has %d nodes with no asn <--" % (msm_id, len(no_asn_nodes)))
-    #if len(no_asn_nodes) != 0:
-    #    print("   %s <==" % no_asn_nodes)
-    ids.append(msm_id)
-    if inter_asn:
+            print("asn file = %s <<< Couldn't find an asns file" % asns_fn)
+            exit()
+        no_asn_nodes = {}
+        msm_dest = c.msm_dests[msm_id][0]
+        n_asns = len(asn_ids)-1  # Don't count "unknown"
+        print(">>> n_asns = %d, n_nodes = %d" % (n_asns, len(node_dir)))
+
+        gf = graph_info.GraphInfo(msm_id, node_dir, n_bins, asn_graphs,
+            n_asns, no_asn_nodes, 0,0)  # No pruning
+        print("%d has %d nodes with no asn <--" % (msm_id, len(no_asn_nodes)))
+        ids.append(msm_id)
+
         same_counts, inter_counts = gf.asn_edges()
+        print("msm_id = %s  <<<\n" % msm_id)
+        #print("same_counts = %s\n" % same_counts)
+        #print("inter_counts = %s\n" % inter_counts)
         pca.append(same_counts);  inter_ca.append(inter_counts)
-    else:
-        p_counts = gf.count_edges()
-        pca.append(p_counts)
-    ##print("msm_id %s, inter_ca %s" % (msm_id, inter_ca))
+        print("pca %s" % pca)
+        print("inter-ca %s" % inter_ca)
 
-plot_asn_counts(pca, inter_ca, ids)  # Inter- Same-AS Edge comparisons
+    plot_asn_counts(pca, inter_ca, ids, ymd)  # Inter- Same-AS Edge comparisons
+

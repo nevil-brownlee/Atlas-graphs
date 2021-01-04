@@ -18,7 +18,7 @@ import config as c
 filters = {"area": "WW", "tags":"system-ipv4-works"}
 probes = ProbeRequest(**filters)  # About 30k probes!
 
-p_fa = c.probes_fn().split("/")  # Make sure the start_ymd dire ctory exists
+p_fa = c.probes_fn().split("/")  # Make sure the start_ymd directory exists
 pd = p_fa[1]
 if not os.path.exists(pd):
     os.makedirs(pd)

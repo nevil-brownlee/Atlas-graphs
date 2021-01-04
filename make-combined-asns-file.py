@@ -1,41 +1,43 @@
+# 1620, Sat 11 Jan 2020 (NZDT)
 # 1520, Wed 10 Jul 2019 (NZST)
 #
 # make-combined-asns-file.py  # Makes single asns file for all msm_ids
 #
-# Copyright 2019, Nevil Brownlee,  U Auckland | RIPE NCC
+# Copyright 2020, Nevil Brownlee,  U Auckland | RIPE NCC
 
 import sys, datetime, string, os, glob
 
 import config as c
 
-c.set_pp(False, c.msm_id)  # Work on graphs-* file
+pp_ix, pp_values = c.set_pp("")  # Set up config info (no + params)
 
-asns_fn = c.asn_fn(5001)
-print("asns_fn = %s" % asns_fn)
+enf, nntb = c.find_msm_files("asns", c.start_ymd)
+print("enf = %s" % enf)
+for gfn in enf:
+    fna = gfn.split("-")
+    msm_id = int(fna[1]);  n_bins = int(fna[-1].split(".")[0])
+    print("  msm_id = %d, n_bins = %s" % (msm_id, n_bins))
+    if n_bins != c.n_bins:
+        print("*** Inconsistent nbr of timebins (%d != %d)" % (
+            n_bins, c.n_bins))
 
-dir, fn = asns_fn.split("/", 1)
-name, msm, ymd, hhmm, nbins, mx_depth, rest = fn.rsplit('-',6)
-prune_s, ftype = rest.split(".")
-g_fn = "%s/%s-*-%s-%s-%s-%s-%s.%s" % (dir, 
-        name, ymd, hhmm, nbins, mx_depth, prune_s, ftype)
-print("-1- g_fn = %s" % g_fn)
+asn_dir = {}  # Dictionary  IPprefix -> ASN
 
-node_dir = {}  # Dictionary  IPprefix -> ASN
-afa_files = glob.glob(g_fn)
-for fn in afa_files:
-    print(">>> %s" % fn)
-    asnf = open(fn, 'r', encoding='utf-8')
-    for line in asnf:
-        ip_addr, asn = line.strip().split()
-        if not ip_addr in node_dir:
-            node_dir[ip_addr] = asn
-    asnf.close()
+for fn in enf:
+    print(fn)
+    asnsf = open(fn, 'r', encoding='utf-8')
+    for line in asnsf:
+        la = line.strip().split()
+        ip_addr = la[0];  asn = la[1]
+        if not ip_addr in asn_dir:
+            asn_dir[ip_addr] = asn
+    asnsf.close()
 
-all_asns_fn = g_fn = "%s/%s-all-%s-%s-%s-%s-%s.%s" % (dir, 
-        name, ymd, hhmm, nbins, mx_depth, prune_s, ftype)
+all_asns_fn = c.all_asns_fn()
 aaf = open(all_asns_fn, 'w')
-n_keys = sorted(node_dir.keys())
-for ip_addr in node_dir:
-    aaf.write("%s %s\n" % (ip_addr, node_dir[ip_addr]))
+n_keys = sorted(asn_dir)
+print("Writing %s, %d nodes" % (all_asns_fn, len(asn_dir)))
+for ip_addr in asn_dir:
+    aaf.write("%s %s\n" % (ip_addr, asn_dir[ip_addr]))
 aaf.close()
 

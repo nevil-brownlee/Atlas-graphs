@@ -1,12 +1,12 @@
+# 1627, Wed 19 Feb 2020 (NZDT)
 # 1510, Sat  4 Nov 2017 (NZST)
-# 1635, Sat  4 Mar 2017 (NZDT)
 # 1021, Thu 23 Jun 2016 (NZST)
 #
 # get-tr-gz.py: gets atlas json data from RIPE, write to .gz file
 #    pypy3 get-tr-gz.py -y 20171023 -n 48 -d 7 -m 5005
 #                 msm_id 5005 for a week (Mon 20171023 thru Sun 1029)
 #
-# Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC
+# Copyright 2020, Nevil Brownlee,  U Auckland | RIPE NCC
 
 # Documentation at https://github.com/RIPE-NCC/ripe-atlas-cousteau
 
@@ -121,5 +121,5 @@ for day in range(0,c.n_days):  #Read  RIPE Atlas for n_days days
         of.write(line)
     of.close()
     inf.close()
-#    #os.remove(fn_gzm_txt)
 
+    os.remove(fn_gzm_txt)  # We have the .gz version, don't need the .txt

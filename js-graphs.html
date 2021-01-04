@@ -3,7 +3,7 @@
 <style>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Copyright 2017, Nevil Brownlee,  U Auckland | RIPE NCC -->
+<!-- Copyright 2020, Nevil Brownlee,  U Auckland | RIPE NCC -->
   
 * {box-sizing:border-box}
 body {font-family: Verdana,sans-serif;margin:0}
@@ -90,7 +90,8 @@ de;
 
 <script>
 
-//var cap_stem = "5005-20160513-0700-24-7-0.50-" goes here, then var dlen = ;
+//var cap_stem = "5005-20160513-0700-48" goes here,
+//  then var dlen = and bn_offset =;
 
 function keyHandler(e) {
   e = e || window.event;
@@ -169,7 +170,7 @@ function objTimeout() {
 	   
 function getBinImage(Bn) {
   if (timeout) return;  // Timer running, ignore
-  var bns = Bn.toString(10);
+  var bns = (Bn + bn_offset).toString(10);
   while (bns.length < dlen) bns = '0'+bns;  // Add leading zeroes
   var src = cap_stem + bns +'.svg';
   //alert('src = ' + src);
@@ -185,7 +186,7 @@ function getBinImage(Bn) {
   bn = Bn;  // This bin
   captions[bn].style.display = '';
 
-  nBin = nextBn(+1);  
+  nBin = nextBn(+1) + bn_offset;
   var elem = document.getElementById("nextv");
   if (timeout) elem.value = '';  // Timer running
   else elem.value = nBin;
@@ -193,7 +194,7 @@ function getBinImage(Bn) {
 
 function getBin() {
   var elem = document.getElementById("nextv");
-  var nv = parseInt(elem.value, 10);
+  var nv = parseInt(elem.value, 10) - bn_offset;
   if (nv < 0 || nv > nBins)
     elem.value = "";  // Invalid bin nbr, blank the nextv element
   else {

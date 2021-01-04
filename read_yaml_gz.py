@@ -117,7 +117,7 @@ class Yaml:
                         next_nb = None
                         break  # special: last line for a responder
         except self.YamlEOF:
-            print("   Exception caught in get_responders()")
+            print("   YamlEOF Exception caught in get_responders()")
             #sys.exc_clear()  # Not needed in python3
         return -1, ln, name, value, responders
 
@@ -276,7 +276,7 @@ class Yaml:
 
             t_traces, t_addrs, t_hops, t_succ, t_addrs_deleted, \
                 t_hops_deleted = read_atlas_gz.cleanup_bin(
-                    self.tb, tb_n, c.mx_depth)
+                    self.tb, tb_n)  # , c.mx_depth) 20 Feb 2020
                 # Remove rfc1918 and duplicate-responder address
             print("===  tb=%s, t_traces=%s" % (self.tb, t_traces))
 

@@ -1,3 +1,4 @@
+# 1730, Wed  8 Jan 2020 (NZDT)  # Removed code for prunung graphs
 # 1745, Thu 22 Feb 2018 (NZDT)
 # 0858, Tue 14 Nov 2017 (SGT)
 # 1117, Mon  9 Jan 2017 (NZDT)
@@ -10,127 +11,87 @@ import numpy as np  # Operations on arrays
 # http://wiki.scipy.org/Tentative_NumPy_Tutorial
 
 import config as c
-tb_mx_depth = c.stats_mx_depth+1  # mx_depth = mx hops back from dest
 
+#? tb_mx_depth = 0  # Max depth found in stats file
+    
 class Root:
-    mx_trees = 20  # Constant in graph.py
-    mx_depth = 0
-
     def __init__(self, r_nbr, prefix, mx_tr_pkts):
         self.r_nbr = r_nbr;  self.pref_s = prefix
         self.d_edges = [  # 2D: edges at each depth _for this root_
-            {} for j in range(tb_mx_depth)]  # T/F
- 
+            {} ]  # Start with depth 0 only
+#            {} for j in range(tb_mx_depth)]  # T/F
+        self.mx_depth = 1
+
     def __str__(self):
-        return ("Root %d, %tr_pkts" %  self.r_nbr, self.edge_count)
+        return ("Root %d, mx_depth %d" %  (self.r_nbr, self.mx_depth))
 
     def add_edge(self, depth, e_to, e_from, tr_pkts):
         et = (e_from, e_to)
+        if depth > len(self.d_edges)-1:
+            self.d_edges.append({})
+            self.mx_depth += 1
         if et not in self.d_edges[depth]:
             self.d_edges[depth][et] = tr_pkts
-        
-    def root_stats(self, tbs):
-        self.pd_edges = [ # 2D: Edges (after prunung) for each prune_pc
-            {} for j in range(tbs.n_prune_pkts)]
-        self.d_tr_pkts = [ # 2D: lists of tr_pkts (after pruning) at each depth
-            [] for j in range(tb_mx_depth) ]
-        self.pd_nodes = [  # Nodes (after prunung) for each prune_pc
-            {} for j in range(tbs.n_prune_pkts)]
-        self.pc_edges = np.zeros(len(tbs.prune_pkts))
-        self.pc_nodes = np.zeros(len(tbs.prune_pkts))
-        self.pc_tr_pkts = np.zeros(len(tbs.prune_pkts))
 
-        for pcx,pc in enumerate(tbs.prune_pkts):  # for each prune_pc
-            #prune_tr_pcs = int(tbs.prune_pcs[pcx]*
-            #    tbs.mx_root_tr_pkts/100.0)
-            prune_tr_pkts = int(tbs.prune_pkts[pcx])
-                # Use min_tr_pks instead of prune_pcs
-
-            for d in range(tb_mx_depth):  # each depth (for this root)
-                e_d = self.d_edges[d]  # Edges dict for this depth
-                for e in e_d:  # 
-                    tr_pkts = e_d[e]
-                    to = e[0];  fr = e[1]; 
-                    #print("e=%s, to %s from %s, %d tr_pkts" % (
-                    #    e, to, fr, tr_pkts))
-                    if tr_pkts >= prune_tr_pkts:
-                        if not e in self.pd_edges:
-                            self.pd_edges[pcx][e] = True
-                        if not fr in self.pd_nodes:
-                            self.pd_nodes[pcx][fr] = True
-
-            # nodes+edges-v-min_tr_pkts.py
-            #     plots pc_edges and pc_nodes vs min_tr pkts
-            self.pc_edges[pcx] = len(self.pd_edges[pcx])
-            self.pc_nodes[pcx] = len(self.pd_nodes[pcx])
-            #self.pc_tr_pkts[pcx] = len(self.d_tr_pkts[pcx])
-
-        for d in range(tb_mx_depth):  # each depth (for this root)
+    def root_stats(self, tbs):  
+        # Made tables pf tr_pkts and nodes after prunung
+        #   Pruning code deleted Feb 2020
+        #print("==2== starting root_stats: tb_mx_depth=%d" % self.mx_depth)
+        self.d_tr_pkts = [ # 2D: lists of tr_pkts at each depth
+            [] for j in range(self.mx_depth) ]
+        #print("==3== Root.d_tr_pkts = (%d)" % (len(self.d_tr_pkts)))
+        for d in range(self.mx_depth):  # each depth (for this root)
             e_d = self.d_edges[d]  # Edges dict for this depth
             for e in e_d: 
                 tr_pkts = e_d[e]
                 self.d_tr_pkts[d].append(tr_pkts)
-            if len(e_d) > 0 and len(e_d) > self.mx_depth:
-                self.mx_depth = d
-            #print("ddd depth %d, d_tr_pkts = %s" % (d, self.d_tr_pkts[d]))
-            #print("mx_depth = %d\n" % self.mx_depth)
 
 class TbStats:
-    prune_pkts = []
-    n_prune_pkts = 50
-    prune_pc = 0;  mx_root_tr_pkts = 0
-    
-    def __init__(self, bn, msm_id):
-        self.prune_pkts = []
-        self.bn = bn;  self.msm_id = msm_id
+    def __init__(self, bn, msm_id):  ###  bn)  ###, n_bins):
+        self.msm_id = msm_id
+        #self.distal_mx_depth = np.zeros(n_bins)
+        #self.distal_min_ntrs = np.zeros(n_bins)
+        self.tb_mx_depth = 1
         self.ra = []  # Roots in this timebin
-        if len(self.prune_pkts) == 0:
-            if msm_id == 5016:  # prune_pkts values for RIPE paper <<<
-                for n in range(self.n_prune_pkts):  # 0.05 to 0.54 for others
-                    self.prune_pkts.append(8+n*10)  # [10,60]
-                #print("5016 prune_pkts = %s" % self.prune_pkts)
-            else:
-                for n in range(self.n_prune_pkts):  # 0.05 to 0.54 for others
-                    self.prune_pkts.append(8+n*6)  # [10,60]
+        self.tb_tr_pkts = []
+        self.d_t_pkts = None
 
-    def set_TbRoots(self, prune_pkts, mx_tr_pkts):
-        TbStats.prune_pkts = float(prune_pkts)
-        TbStats.mx_root_tr_pkts = int(mx_tr_pkts)
-
-    def sum_roots(self, msm_id):  # Set TbStats pc_tr_pkts
-        self.pc_nodes = np.zeros(self.n_prune_pkts)  # Nodes for each prune_pc
-        self.pc_edges = np.zeros(self.n_prune_pkts)  # edges ditto
-        self.pc_tr_pkts = np.zeros(self.n_prune_pkts)  # tr_pkts ditto
-        for j in range(len(self.ra)):  # All the root objects
-            self.pc_nodes = np.add(self.pc_nodes,self.ra[j].pc_nodes)
-            self.pc_edges = np.add(self.pc_edges,self.ra[j].pc_edges)
-            self.pc_tr_pkts = np.add(self.pc_tr_pkts,self.ra[j].pc_tr_pkts)
-        #print("sum_roots(): pc_tr_pkts = %s" %  self.pc_tr_pkts)
-
-        self.tb_tr_pkts = [  # Tr_Pkts for roots x depth (2D)
-            [] for j in range(tb_mx_depth)]  # Stacked bars for each depth
-        #?self.tn_tr_pkts = []  # Tr_Pkts for all roots at each depth (1D) 
-        d_t_pkts = np.zeros(tb_mx_depth)
-        for d in range(tb_mx_depth):
-            for r in range(len(self.ra)):  # All the root objects
-                self.tb_tr_pkts[d].extend(self.ra[r].d_tr_pkts[d]) # << plotted
-                # Nbr pkts at this depth
-            #?self.tn_tr_pkts.append(np.array(self.tb_tr_pkts[d]))
-            print("tb_tr_pkts[%d] = %s" % (d, self.tb_tr_pkts[d]))
-            d_t_pkts[d] =  np.array(self.tb_tr_pkts[d]).sum()
-
-        #print("d_t_pkts = %s" % d_t_pkts)
-        tot_tr_pkts = d_t_pkts.sum()
-        #print("tot_tr_pkts = %d" % tot_tr_pkts)
-        pc_mult = 100.0/tot_tr_pkts
-        cum_pc_tr_pkts = np.cumsum(d_t_pkts*pc_mult)
-        print("%d: cum_pc_tr_pkts =" % msm_id, end='')
-        for d in range(tb_mx_depth):
-            print("  %.2f" % cum_pc_tr_pkts[d], end='')
-        print()
-
+    #def save_tb_stats(bn_mx_depth, bn_min_ntrs):
+    #    print("== 4 == bn %d, mx_depth %d, min_trs %d" % (
+    #        bn_mx_depth, bn_min_ntrs))
+    #    self.distal_mx_depth[bn] = bn_mx_depth
+    #    self.distal_min_ntrs[bn] = bn_min_ntrs
             
-class MsmFile:
+    def sum_roots(self, msm_id):  # Set TbStats tb_tr_pkts
+        for root in self.ra:
+            if root.mx_depth > self.tb_mx_depth:
+                self.tb_mx_depth = root.mx_depth
+        print("++> TbStats.tb_mx_depth = %d" % self.tb_mx_depth)
+        self.tb_tr_pkts = [  # Tr_Pkts for roots x depth (2D)
+            [] for j in range(self.tb_mx_depth)]
+
+        for rn,root in enumerate(self.ra):  # Iterate over all roots
+            tb_mx_d = len(root.d_edges)
+            ##if tb_mx_d > tb_mx_depth:
+            ##    tb_mx_depth = tb_mx_d
+            self.tn_tr_pkts = []  # Tr_Pkts for all roots at each depth (1D) 
+            for d in range(tb_mx_d):
+                self.tb_tr_pkts[d].extend(root.d_tr_pkts[d]) # << plotted
+                self.tn_tr_pkts.append(np.array(self.tb_tr_pkts[d]))
+                #print("-- 1 -- rn=%d, d=%d, tb_tr_pkts[d] = %s" % (
+                #    rn, d, self.tb_tr_pkts[d]))
+        self.d_t_pkts = np.zeros(self.tb_mx_depth)
+        for d in range(self.tb_mx_depth):
+            self.d_t_pkts[d] =  np.array(self.tb_tr_pkts[d]).sum()
+            #print("-- 2 -- d=%2d, d_t_pkts[d]=%s" % (d,d_t_pkts[d])) 
+
+        #print("msm_id %d, mx_depth %d, tot_tr_pkts %s" % (
+        #    self.msm_id, self.tb_mx_depth, d_t_pkts))
+        #print("TbStats %d, mx_depth %d" % (
+        #    self.msm_id, self.tb_mx_depth))
+
+
+class MsmStatsFile:
     sf = None    # Stats filename for this msm_id
     tbsa = None  # TbStats array for this msm_id
 
@@ -144,76 +105,114 @@ class MsmFile:
 
     def read_roots(self, tbs, ln):
         r_nbr = 0;  r_obj = None
+        last_dest = "";  last_depth = last_tr_pkts = -1
+        mx_depth_seen = 0;  min_distal_tr = 9999999
         while True:
             flag, la = self.getline();  ln += 1
-            #print "r_roots %d %s" % (ln, flag)
+            #print("^^ flag %s, la = %s" % (flag,la))
             if flag == "R":  #   Header for next root
-                if r_obj:  # Handle info for previous root
+                #print("++ flag %s, la = %s" % (flag,la))
+                if r_obj:
                     r_obj.root_stats(tbs)
-                    #if r_nbr == 1:  # Only do one root
-                    #    return flag, la, ln
+                    #print("&& 4 && last r_obj: mx_depth %d" % (
+                    #    tbs.ra[-1].mx_depth))
+                    #print("   d_edges = %s" % tbs.ra[-1].d_edges)
                 r_prefix = la.pop(1)  # string
                 r_nbr, r_mx_tr_pkts = map(int, la)
-                #print("RRR %d, %s, %d" % (r_nbr, r_prefix, r_mx_tr_pkts))
+                #print("R %d, %s, %d" % (r_nbr, r_prefix, r_mx_tr_pkts))
                 r_obj = Root(r_nbr, r_prefix, r_mx_tr_pkts)
                 tbs.ra.append(r_obj)
-                ###print("flag 'R': r_obj.pc_edges = %s" % r_obj.pc_edges)
             elif flag == "N":
                 n_prefix = la.pop(0)  # string
                 n_depth, n_tr_pkts, n_mx_so_far = map(int, la)
-                print("NNN %s, %d, %d, %d" % (
+                print("Unexpected:  N %s, %d, %d, %d" % (
                     n_prefix, n_depth, n_tr_pkts, n_mx_so_far))
                 r_obj.add_node(n_depth, n_prefix, n_tr_pkts)
             elif flag == "E":
-                e_depth = int(la[0])
-                e_tr_pkts = int(la[3])
-                #print("EEE %d, (%s, %s)" % (e_depth, la[1], la[2]))
-                r_obj.add_edge(e_depth, la[1], la[2], e_tr_pkts)  # e_to, e_from
+                e_depth, dest, src, in_trs = la[0:4]
+                e_depth = int(e_depth);  e_tr_pkts = int(in_trs)
+                #print("E %d, %s, %s, %d" % (e_depth, dest, src, e_tr_pkts))
+                r_obj.add_edge(e_depth, dest, src, e_tr_pkts)  # e_to, e_from
+                if last_flag != "R":  # First edge for new root
+                    if e_depth <= last_depth:  # Recursed back to lower depth
+                        #print(">!>!> %s %d %d" % (
+                        #    last_dest, last_depth, last_tr_pkts))
+                        if last_depth > mx_depth_seen:
+                            mx_depth_seen = last_depth
+                        if last_tr_pkts < min_distal_tr:
+                            min_distal_tr = last_tr_pkts
+                last_depth = e_depth;  last_tr_pkts = e_tr_pkts
             elif flag == "T":  # Trailer for this timebin
+                already_walked, loop_detected, n_too_deep = map(int, la)
+                #print(">->-> %s %d %d" % (last_dest, last_depth, last_tr_pkts))
+                #print("T %d %d %d  bin %02d" % (
+                #    already_walked, loop_detected, n_too_deep, tbs.bn))
                 if r_obj:  # Handle info for previous root
                     r_obj.root_stats(tbs)
                     #print "r_obj.n_tr_pkts = %s" % r_obj.n_tr_pkts
                 tbs.sum_roots(self.msm_id)  #  Sum for all roots
-                already_walked, loop_detected, n_too_deep = map(int, la)
-                #print("TTT %d %d %d  bin %02d" % (
-                #    already_walked, loop_detected, n_too_deep, tbs.bn))
+
+                if last_depth > mx_depth_seen:
+                    mx_depth_seen = last_depth
+                if last_tr_pkts < min_distal_tr:
+                    min_distal_tr = last_tr_pkts
+                #print("?? mx_depth_seen = %d, min_distal_trpkts = %d" % (
+                #    mx_depth_seen, min_distal_tr))
                 return flag, la, ln
             elif flag == "X":  # EOF
-                print(">>>> Unexpected EOF")
                 return flag, la, ln
+            last_flag = flag
+        print(">X>X> %s %d %d" % (last_dest, last_depth, last_tr_pkts))
+        tbs.save_tb_stats(mx_depth_seen, min_distal_ntr)
 
-    def __init__(self, stats_fn, n_bins):
-        print("MsmFile: n_bins = %d" % n_bins)
+    def __init__(self, stats_fn, first_bin, last_bin):
         sa = stats_fn.split("-")
-        self.msm_id = int(sa[1]);  self.mx_depth = int(sa[5])
+        print("sa = %s" % sa)
+        self.msm_id = int(sa[1])
+        print("MsmStatsFile: %d, bins = %d-%d" % (
+            self.msm_id, first_bin, last_bin))
         #print("msm_file: sa = %s" % sa)
         #print("Stats report for file %s" % c.msm_stats_fn(self.msm_id))
         self.sf = open(stats_fn, "r")
         self.tbsa = []
+        self.tb_mn_depth = 999  # min(mx_depth) over all bins
 
-        bn = 0;  ln = 0;  r_obj = None
+        bn = ln = mx_tr_pkts = 00;  r_obj = None
         while True:
             flag, la = self.getline();  ln += 1
-            #print "line %d %s" % (ln, flag)
+            #print("line %d %s" % (ln, flag))
             if flag == "X":  # EOF
+                print("EOF REACHED")
                 break
             if flag == "H":  # Header for timebin bn
-                t_dest, n_traces, mx_tr_pkts, prune_pc, prune_tr_pkts, f_bn = la
-                print(">>> bn %d: msm_id %s, mx_depth %d, mx_tr_pkts %s," % (
-                    bn, self.msm_id, self.mx_depth, mx_tr_pkts))
-                print("prune_pc %s, prune_tr_pkts %s, n_traces %s" % (
-                   prune_pc, prune_tr_pkts, n_traces))
-                tbs = TbStats(bn, self.msm_id)
-                tbs.set_TbRoots(prune_pc, mx_tr_pkts)
-                flag, la, ln = self.read_roots(tbs, ln)
-                #tbs.plot_roots()
-                #tbs.plot_stacked()
-                self.tbsa.append(tbs)
+                t_dest, n_traces, mx_tr_pkts = la[0:3]
+                bn = int(la[-1])
+                #print(">>> bn %d: msm_id %s, mx_tr_pkts %s, n_traces %s" % (
+                #    bn, self.msm_id, mx_tr_pkts, n_traces))
+                #if bn < first_bin or bn > last_bin:
+                #    pass  #self.tbsa.append(0)
+                #else:
+                if bn >= first_bin and bn <= last_bin:
+                    tbs = TbStats(bn, self.msm_id) ###, first_last_bin)
+                    print("$$ bn=%d, making TbStats" % bn)
+                    flag, la, ln = self.read_roots(tbs, ln)
+                    self.tbsa.append(tbs)
 
                 #break  # Only do one timebin
                 #print("  f_bn=%d, bn=%d" % (int(f_bn), bn))
-                bn += 1
-                if bn == n_bins:  # Stop after n_bins bins
-                    break
-                
+                #bn += 1
+                #if bn == n_bins:  # Stop after n_bins bins
+                #    print(">>> Stopping after bin %d" % bn)
+                #    break
+        if flag == "X":
+            print("Stats file EOF reached after bin %d" % bn)                
         self.sf.close()
+        print("tbsa = %s" % self.tbsa)
+        for tbs_obj in self.tbsa:
+            if tbs_obj.tb_mx_depth < self.tb_mn_depth:
+                self.tb_mn_depth = tbs_obj.tb_mx_depth
+        print("    tb_mn_depth = %d <<<<<" % self.tb_mn_depth)
+
+if __name__ == "__main__":  # Running as main()
+    sfn = c.stats_fn(c.msm_id)
+    msf = MsmStatsFile(sfn, 1)

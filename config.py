@@ -1,13 +1,14 @@
+# 1259, Thu  9 Jan 2020 (NZDT)
 # 1625, Wed 18 Dec 2019 (NZDT)
 # 1812, Sun  4 Mar 2018 (NZDT)
 #
 # config.py: configuration info for Nevil's Atlas graph programs
 #            
-# Copyright 2018, Nevil Brownlee,  U Auckland | RIPE NCC
+# Copyright 2020, Nevil Brownlee,  U Auckland | RIPE NCC
 
-import string, os
+import string, os, sys
 from datetime import datetime
-import subprocess
+from subprocess import Popen, PIPE, STDOUT
 
 import getparams as gp
 
@@ -24,12 +25,13 @@ import getparams as gp
 
 # Python note:
 # This is a module; importing it (essentially) creates a single class instance.
-# set_pp(stats_file, msm_id) picks up msm_id's prune parameters, then
-# sets global (to module) variables/functions so that programs using this 
-# module can see them.
+# set_pp() sets global (to module) variables/functions so that programs
+#   using this module can see them.
 
 dir = "."  # Base directory for RIPE graph files
 agp = gp.AgParams(dir)  # Get -* parameters
+
+mx_depth = asn_prefix = asn_suffix = ""  # Variables used in config functions
 
 start_ymd, start_hhmm, msm_id, n_bins, n_days, \
     full_graphs, write_stats, rem_cpx = agp.param_values()
@@ -37,43 +39,63 @@ print("ymd=%s, hhmm=%s, n_bins=%d, n_days=%d, msm_id=%d, full=%s, statf=%s (rem_
     start_ymd, start_hhmm, n_bins, n_days, msm_id,
     full_graphs, write_stats, rem_cpx))
 
-#def reset_stats():
-#    agp.raw_stats = agp.write_stats = False
-#    agp.save_params()  
+def set_ymd(ymd):  # Set ymd to use
+    global start_ymd
+    start_ymd = ymd
+
+def set_asn_prefs():
+    global asn_prefix, asn_suffix
+    if full_graphs:
+       asn_prefix = asn_suffix = ""
+    else:  # ASN graphs
+        asn_prefix = "asn-";  asn_suffix = "-asn"
+
+def set_full_graphs(v):
+    global full_graphs
+    full_graphs = v
+    set_asn_prefs()
+
+def date_from_ymd(ymd, hhmm):
+    return datetime(int(ymd[0:4]), int(ymd[4:6]),
+        int(ymd[6:]),  int(hhmm[0:2]), int(hhmm[2:]))
 
 #start_time = datetime(2017, 2, 20, 0, 0)  # Monday, 20 Feb 2017 (UTC)
-start_time = datetime(int(start_ymd[0:4]), int(start_ymd[4:6]),
-    int(start_ymd[6:]),  int(start_hhmm[0:2]), int(start_hhmm[2:]))
+start_time = date_from_ymd(start_ymd, start_hhmm)
+#start_time = datetime(int(start_ymd[0:4]), int(start_ymd[4:6]),
+#    int(start_ymd[6:]),  int(start_hhmm[0:2]), int(start_hhmm[2:]))
 
-ft_range = "%s-%02d" % (start_hhmm, n_bins*n_days)
-ds_stem = "%d-%s-%s" % (msm_id, start_ymd, ft_range)
+#ds_id = "%s-%02d" % (start_hhmm, n_bins*n_days)
+ds_id = "%s-%d" % (start_hhmm, n_bins*n_days)
 
-msm_nbrs = [5005, 5015, 5006, 5004, 5016, 5017]  # Decreasing nbr of edges
+def dgs_stem(msm_id):
+    return "%d-%s-%s" % (msm_id, start_ymd, ds_id)
 
-c_mx_depth = 15  # mx_depth in config file
-if start_ymd[0:4] >= "2019":
-    c_mx_depth = 18  # Changed for 2019 datasets
-c_prune_max = 20
+def node_stem(msm_id):
+    return "%s/nodes-%d-%s-%s" % (start_ymd, msm_id, start_ymd, ds_id)
 
-msm_dests = {5017: ("ronin.atlas",c_mx_depth,c_prune_max,""),
-                                           # pp[2] of 80 is about 0.3%
-             # Note: in c_prune_max191211 data, a few IP addrs reached mx_depth (15)!
-             5005: ("i.root",c_mx_depth,c_prune_max,"192.36.148.17"),
-             5016: ("j.root",c_mx_depth,c_prune_max,"192.58.128.30"),
-             5006: ("m.root",c_mx_depth,c_prune_max,"202.12.27.33"),
-             5015: ("h.root",c_mx_depth,c_prune_max,"198.97.190.53"),
-             5004: ("f.root",c_mx_depth,c_prune_max,"192.5.5.241"),
+###msm_nbrs = [5005, 5015, 5006, 5004, 5016, 5017]  # Decreasing nbr of edges
+### was used in -v-timebins programs !!!!
 
-             5001: ("k.root",c_mx_depth,c_prune_max,"193.0.14.129"),
-             5002: ("tt01.ripe.net",c_mx_depth,c_prune_max,""),
-             5008: ("labs.ripe.net",c_mx_depth,c_prune_max,""),
-             5009: ("a.root",c_mx_depth,c_prune_max,"198.41.0.4"),
-             5010: ("b.root",c_mx_depth,c_prune_max,"199.9.14.201"),
-             5011: ("c.root",c_mx_depth,c_prune_max,"192.33.4.12"),
-             5012: ("d.root",c_mx_depth,c_prune_max,"199.7.91.13"),
-             5016: ("j.root",c_mx_depth,c_prune_max,"192.58.128.30"),
-             5017: ("ronin.atlas",c_mx_depth,c_prune_max,""),
-             5020: ("carson",c_mx_depth,c_prune_max,"") }
+mx_depth = 79  # mx_depth 54 found in graphs (as of 20191211)
+draw_mx_depth = 0  # Allow any mx_depth for drawing graph images
+draw_mn_trpkts = 27  # min_trpkts for drawing graph images
+
+msm_dests = {5017: ("ronin.atlas"," 78.46.48.134"),
+             5005: ("i.root","192.36.148.17"),
+             5016: ("j.root","192.58.128.30"),
+             5004: ("f.root","192.5.5.241"),
+             5006: ("m.root","202.12.27.33"),
+             5015: ("h.root","198.97.190.53"),
+
+             5001: ("k.root","193.0.14.129"),
+             5002: ("tt01.ripe.net",""),
+             5008: ("labs.ripe.net",""),
+             5009: ("a.root","198.41.0.4"),
+             5010: ("b.root","199.9.14.201"),
+             5011: ("c.root","192.33.4.12"),
+             5012: ("d.root","199.7.91.13"),
+             5016: ("j.root","192.58.128.30"),
+             5020: ("carson","") }
 
 # Instances data from www.root-servers.org
 msm_instances_2012 = {5017: 1, 5005: 50, 5006: 8, 5015: 2, 5004: 58, 5016: 127,
@@ -91,31 +113,16 @@ msm_instances_2019 = {5017: 1, 5005: 70, 5006: 9, 5015: 4, 5004:252, 5016: 162,
 def instances():
     if start_ymd[0:4] == "2012":
         return msm_instances_2012
-    elif start_ymd[0:4] == "2017":
+    elif start_ymd[0:4] <= "2017":
         return msm_instances_2017
-    elif start_ymd[0:4] == "2019":
+    elif start_ymd[0:4] <= "2019":
         return msm_instances_2019
-
-def msm_pp(msm):  # Prune parameters
-    #print("@@@ msm=%s (%s)" % (msm, type(msm)))
-    #print("@@@ msm_dests=%s (%s)" % (msm_dests, type(msm_dests)))
-    pp = msm_dests[msm]
-    p_pkts = isinstance(pp[2], int)  # True if pp[2] is an int
-    if p_pkts:
-        prune_s = "%d" % pp[2]
-    else:
-        prune_s = "%.2f" % pp[2]
-    return (pp[0],  # dname
-            pp[1],  # mx_depth
-            pp[2],  # prune_pc (float) or prune_tr_pkts (int)
-            p_pkts, # True if it's a max_tr_pkts
-            prune_s)  # p_pkts as string
 
 # Config for:   make-probes-list abd get-tr-gz.py (python3)
 
 ppb = 1000  #  Probes per block
 
-def probes_fn():
+def probes_fn():  # probes file has 10 records, each with 1000 probe nbrs
     return "%s/%s/probe-blocks.txt" % (dir, start_ymd)
 
 gzm_dir = "%s/%s" % (dir, start_ymd)  # start_ymd from params.txt
@@ -128,73 +135,62 @@ def gzm_txt_fn(st_ymd, msm_id):  # fn for gzm.txt file
 
 def gzm_gz_fn(st_ymd, msm_id):  # fn for gzm.gz file
     return "%s/%s/%s-%s-%s-%02d.gz" % (
-        gzm_dir, st_ymd, msm_id, st_ymd, start_hhmm, n_bins)
+        gzm_dir, st_ymd, msm_id, st_ymd, start_hhmm, n_bins*n_days)
 
 
 # build-graphs.py  config
 
-stats_mx_depth = c_mx_depth;  stats_min_tr_pkts = 10  # Prune parameters
+def check_msm_ids(strs):
+    msms = []
+    for id in strs:
+        if not id.isdigit(): 
+            print("msm_id >%s< contains non-digit(s)" % id);  exit()
+        if id[0:2] != "50":
+            print("msm_id >%s< does not start with '50'" % id);  exit()
+        msms.append(int(id))
+    return msms  # Array of ints
 
-def set_pp(stats_file, msm_id):  # True to use stats file instead of graphs file
-    global dname, mx_depth, prune_pc, p_pkts, prune_s, \
-        dgs_info, dgs_stem, node_fn, graphs_fn, asn_prefix, asn_suffix
-        # Globals needed by functions (within config module)
-    dname, mx_depth, prune_pc, p_pkts, prune_s = msm_pp(msm_id)
-    if stats_file:  # For graph-stats.py analysis
-        mx_depth = stats_mx_depth
-        #prune_p = stats_min_tr_pkts;  p_pkts = True
-        prune_p = msm_dests[msm_id][2];  p_pkts = True  # 1 Dec 2019 !!
-        prune_s = "%s" % prune_p
-    dgs_info = "%d-%s" % (mx_depth, prune_s)
+def check_ymds(strs):
+    for id in strs:
+        if not id.isdigit(): 
+            print("ymd >%s< contains non-digit(s)", id);  exit()
+        if id[0:2] != "20":
+            print("ymd >%s< does not start with '20'" % id);  exit()
+        if id[4:6] < "01" or id[4:6] > "12" :
+            print("ymd >%s< has an invalid month" % id);  exit()
+        if id[6:8] < "01" or id[6:8] > "31" :
+            print("ymd >%s< has an invalid day" % id);  exit()
+    return strs  # Array of strings
 
-    node_stem = "%s/nodes-%d-%s-%s-%d-%s" % (
-    start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
-    # Must call set_pp to set mx_depth <<<<<<<<<<<<<<<<<
-
-    dgs_stem = "%d-%s-%s-%s" % (msm_id, start_ymd, ft_range, dgs_info)
-    if full_graphs:
-        graphs_fn = msm_graphs_fn(msm_id)  # graphs file (from traces file)
-        node_fn = node_stem + ".txt"
-        asn_prefix = asn_suffix = ""
-    else:  # ASN graphs
-        graphs_fn = msm_asn_graphs_fn(msm_id)  # asngraphs file (asn-filter.py)
-        dgs_stem += "-asn"
-        node_fn = node_stem + "-asn.txt"
-        asn_prefix = "asn-";  asn_suffix = "-asn"
+def set_pp(pnames):
+    #print("config: pnames >%s<" % pnames)
+    gpp_result, pp_values = agp.get_plus_params(pnames)
+#    print("CONFIG gpp_result = >%s<" % get_plus_params_result)
+    return gpp_result, pp_values  # Result from set_pp
 
 def msm_graphs_fn(msm_id):  # Depends on full_graphs !
-    asn_s = "asn"
-    if full_graphs:
-        asn_s = ''
-    return "%s/%sgraphs-%d-%s-%s-%d-%s.txt" % (start_ymd, asn_s,
-        msm_id, start_ymd, ft_range, mx_depth, prune_s)
+    return "%s/%sgraphs-%d-%s-%s.txt" % (
+        start_ymd, asn_prefix,  msm_id, start_ymd, ds_id)
+
+def s_n_info_fn(msm_id):  # s_nodes info file name
+        #  Written by make-combined-svgs.py
+    graphs_fn = msm_graphs_fn(msm_id)
+    gx = graphs_fn.find("graphs")
+    return graphs_fn[0:gx+5] + "-snodes" + graphs_fn[gx+6:]
 
 def stats_fn(msm_id):
-##    print("mx_depth=%d, prune_pc=%.2f <<< stats_fn" % (mx_depth, prune_pc))
-    print("config.py: msm_id = %s" % msm_id)
-    return "%s/stats-%d-%s-%s-%d-%s.txt" % (start_ymd,
-        msm_id, start_ymd, ft_range, mx_depth, prune_s)
-
-def success_fn(msm_id):
-    return "%s/success-stats-%d-%s-%s-%d-%s.txt" % (start_ymd,
-        msm_id, start_ymd, ft_range, mx_depth, prune_s)
+    # H (header), R (roots), E (edges) and T (build-info) records
+    # stats files are written by graph.build-graphs.py
+    #   E records have depth, node <- s_node, trpkts_in 
+    return "%s/stats-%d-%s-%s.txt" % (
+        start_ymd, msm_id, start_ymd, ds_id)
 
 #target_bn_lo = 0;  target_bn_hi = 1 # Bin 0 only
 #target_bn_lo = 0;  target_bn_hi = 2 # Bin 1 and bin 2
 #target_bn_lo = 0;  target_bn_hi = 4 # Bin 0-3 only
 #target_bn_lo = 0;  target_bn_hi = 24  # First 12 hours only
 target_bn_lo = 0;  target_bn_hi = n_days*n_bins  # All bins
-#  Target bin range used by build_graphs.py and make-combined-svgs.py
-
-ft_range = "%s-%02d" % (start_hhmm, n_bins*n_days)
-
-def graph_gather_fn(msm_id):
-    start_ymd = start_time.strftime("%Y%m%d")
-    start_hhmm = start_time.strftime("%H%M")
-    return "%s/graphs-%d-%s-%s-%d-%s.txt" % (
-        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
-
-# graph-stats.py
+    # Bins read from graphs file by make-combined-svgs.py
 
 # asn-filter.py
 
@@ -202,92 +198,130 @@ def no_asn_nodes_fn(msm_id):
     return "%s/no-asn-nodes-%d.txt" % (start_ymd, msm_id)
 
 def msm_asn_graphs_fn(msm_id):
-    return "%s/asngraphs-%d-%s-%s-%d-%s.txt" % (
-        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+    return "%s/asn-graphs-%d-%s-%s.txt" % (
+        start_ymd, msm_id, start_ymd, ds_id)
 
 # make-combined-svgs.py
 
-def draw_dir(msm_id):
-    return "%s/%s-%sdrawings" % (start_ymd, msm_id, asn_prefix)
+draw_sub_dir = "full"
+
+def set_sub_dir(sdir):
+    global draw_sub_dir
+    draw_sub_dir = sdir
+
+def draw_dir(msm_id, mn_trpkts):
+    return "%s/%d-%s%d-drawings/%s" % (
+        start_ymd, msm_id, asn_prefix, mn_trpkts, draw_sub_dir)
+
+def clip_spec_dir(msm_id, mn_trpkts):  # for make-clipped-svgs.py
+    return "%s/%d-%s%d-drawings" % (
+        start_ymd, msm_id, asn_prefix, mn_trpkts)
 
 # make-js-slides.py
 
-def dd_dgs_stem():
-    return "%s/%s" % (draw_dir(msm_id), dgs_stem)  # For every timebin!
+def dd_dgs_stem(msm_id, mn_trpkts):
+    return "%s/%s" % (draw_dir(msm_id, mn_trpkts),
+        dgs_stem(msm_id))  # For every timebin!
 
-def slide_set_id():
-    return "%d-%s-%s-%s%s" % (
-        msm_id, start_ymd, ft_range, dgs_info, asn_suffix)
+def slide_set_id(msm_id):
+    return "%d-%s-%s" % (msm_id, start_ymd, ds_id)
 
 
-def slides_fn():
+def slides_fn(msm_id, mn_trpkts):
     as_s = ""
     if not full_graphs:
         as_s = "-asn"
-    return "%s/%s%s-%s-slides.html" % (draw_dir(msm_id), msm_id, as_s, dgs_info)
+    return "%s/%s%s-%s-%s-slides.html" % (
+        draw_dir(msm_id, mn_trpkts), msm_id, as_s, start_ymd, ds_id)
 
 # bgp-bulk-lookup.py
 
-bgp_time = start_time.strftime("%Y-%m-%dT%H:%M")  # arow's time format!
-duration = n_bins*n_days/2  # Hours
-
-bgp_fn = "%s/bgp-%s.%02d.gz" % (start_ymd, bgp_time, duration)
+def bgp_fn(start_ymd):
+    start_time = date_from_ymd(start_ymd, start_hhmm)
+    bgp_time = start_time.strftime("%Y-%m-%dT%H:%M")  # arow's time format!
+    duration = n_bins*n_days/2  # Hours
+    return "%s/bgp-%s.%02d.gz" % (start_ymd, bgp_time, duration)
 
 def nodes_fn(msm_id):
-    return "%s/nodes-%d-%s-%s-%d-%s.txt" % (
-        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+    return "%s/%snodes-%d-%s-%s.txt" % (
+        start_ymd, asn_prefix,  msm_id, start_ymd, ds_id)
+#    return "%s/nodes-%d-%s-%s.txt" % (
+#        start_ymd, msm_id, start_ymd, ds_id)
 
-def asn_fn(msm_id):
-    return  "%s/asns-%d-%s-%s-%d-%s.txt" % (
-        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+def mntr_nodes_fn(msm_id, mntr):
+    return "%s/%snodes-%d-%d-%s-%s.txt" % (
+        start_ymd, asn_prefix,  msm_id, mntr, start_ymd, ds_id)
+#    return "%s/nodes-%d-%s-%s.txt" % (
+#        start_ymd, msm_id, start_ymd, ds_id)
 
-def asn_dests_fn(msm_id):
-    dname, mx_depth, prune_pc = msm_dests[msm_id]
-    return "%s/asns-%d-%s-%s-%d-%s.txt" % (
-        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+def asns_fn(msm_id):
+    return  "%s/asns-%s-%s-%s.txt" % (
+        start_ymd, msm_id, start_ymd, ds_id)
 
-# asn-stats.py
+def all_nodes_fn():
+    return "%s/nodes-all-%s-%s.txt" % (
+        start_ymd, start_ymd, ds_id)
+
+def all_asns_fn():
+    return "%s/asns-all-%s-%s.txt" % (
+        start_ymd, start_ymd, ds_id)
+
+def all_unknown_nodes_fn():
+    return "%s/nodes-unknown-%s-%s.txt" % (
+        start_ymd, start_ymd, ds_id)
+
+def all_unknown_asns_fn():
+    return "%s/asns-unknown-%s-%s.txt" % (
+        start_ymd, start_ymd, ds_id)
 
 def whois_fn(msm_id):
-    return "%s/whois-%d-%s-%s-%d-%s.txt" % (
-        start_ymd, msm_id, start_ymd, ft_range, mx_depth, prune_s)
+    return "%s/whois-%d-%s-%s.txt" % (
+        start_ymd, msm_id, start_ymd, ds_id)
 
+def all_whois_fn():
+    return "%s/whois-all-%s-%s.txt" % (
+        start_ymd, start_ymd, ds_id)
 
-def run_bash_commands(cmds):  # Execute bash commands, separated by \0a
-    p1 = subprocess.Popen(['bash'],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-    output, err = p1.communicate(cmds)  #, timeout=5)
-    #p1.wait()  #  Wait here for command to complete
-    #if err:
-    #    print("cmds %s;  stderr %s" % (cmds, err))
-    return output, err
+def run_bash_commands(cmds):  # Execute bash commands (separated by ;)
+    p1 = Popen(cmds, stdout=PIPE, stderr=STDOUT, bufsize=1,
+               universal_newlines=True, shell=True)
+    output = ""
+    while True:  # Watch p1, can print any output while it's running
+        nextline = p1.stdout.readline()
+        #sys.stdout.write(nextline);  sys.stdout.flush()
+        if nextline == '' and p1.poll() is not None:
+            break
+        if nextline != '':
+            output += nextline
+    return output, p1.returncode
+
 
 def find_msm_files(keyword, reqd_date):
     existing_files = [];  ntb_a = []
-    print("find_msm_files >>> %s (%s), %s (%s)" % ( keyword, type(keyword), reqd_date, type(reqd_date)))
+    #print("find_msm_files >>> %s (%s), %s (%s)" % ( keyword, type(keyword), reqd_date, type(reqd_date)))
     cmd = b"ls " + reqd_date.encode('utf-8') + b"/" + keyword.encode('utf-8') + b"-50*.txt" 
-    print("--cmd = %s" % cmd)
     output, err = run_bash_commands(cmd)
-    lines = output.decode('utf-8').split('\n')
-    rq_ntb = str(n_bins)
+    lines = output[:-1].split('\n')  # Drop the trailing \n
+    rq_ntb = str(n_bins)  # Only want files with c.n_bins timebins
     for ln in lines:
         line = ln.split('-')
-        if len(line) > 1:
-            if line[4] != rq_ntb:
-                continue
-            print(line)
-            existing_files.append(line[1])
-            ntb_a.append(line[4])
-    if len(ntb_a) == 0:
-        print("*** No %s files found" % keyword)
+        if len(line) != 0:
+            nbtxt = line.pop()
+            nb = nbtxt.split(".")[0]
+            if len(ln) > 1:
+                if nb != rq_ntb:
+                    continue
+            #print(line)
+            existing_files.append(ln)
+    if len(existing_files) == 0:
+        print("*** No %s files found with %s timebins" % (keyword, rq_ntb))
         return [], str(n_bins)
+    #print("existing_files = %s, rq_ntb = %s" % (existing_files, rq_ntb))
     return existing_files, rq_ntb
 
 def find_gz_files(keyword):
     existing_files = []
     cmd = b"ls " + keyword.encode('utf-8')
-    print("--cmd = %s" % cmd)
     output, err = run_bash_commands(cmd)
     lines = output.decode('utf-8').split('\n')
     for ln in lines:
