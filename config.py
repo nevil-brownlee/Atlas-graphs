@@ -78,7 +78,7 @@ def node_stem(msm_id):
 
 mx_depth = 79  # mx_depth 54 found in graphs (as of 20191211)
 draw_mx_depth = 0  # Allow any mx_depth for drawing graph images
-draw_mn_trpkts = 27  # min_trpkts for drawing graph images
+draw_mn_trpkts = 24  # min_trpkts for drawing graph images
 
 msm_dests = {5017: ("ronin.atlas"," 78.46.48.134"),
              5005: ("i.root","192.36.148.17"),
@@ -97,26 +97,34 @@ msm_dests = {5017: ("ronin.atlas"," 78.46.48.134"),
              5016: ("j.root","192.58.128.30"),
              5020: ("carson","") }
 
-# Instances data from www.root-servers.org
-msm_instances_2012 = {5017: 1, 5005: 50, 5006: 8, 5015: 2, 5004: 58, 5016: 127,
-                 5001:70, 5002:1, 5008:1, 5009:8, 5010:1, 5011:8,
-                 5012:1, 5016:70, 5017:1, 5020:1}  # Site instances for PAM 2014
+# Instances data from root-servers.org
+msm_instances_2012 = {5017: 1, 5005: 38, 5006: 6, 5015: 2, 5004: 49, 5016: 70,
+                 5001:18, 5002:1, 5008:1, 5009:6, 5010:1, 5011:6,
+                 5012:1, 5016:70, 5017:1, 5020:1}  # 15 Mar 2015 (wayback machine)
 
+msm_instances_2015 = {5017: 1, 5005: 49, 5006: 7, 5015: 2, 5004:58, 5016: 76,
+                 5001:17, 5002:1, 5008:1, 5009:5, 5010:1, 5011:8,
+                 5012:69, 5016:76, 5017:1, 5020:1}  # 15 Mar 2015 (wayback machine)
 msm_instances_2017 = {5017: 1, 5005: 70, 5006: 9, 5015: 2, 5004:241, 5016: 164,
                  5001:72, 5002:1, 5008:1, 5009:28, 5010:3, 5011:10,
-                 5012:153, 5016:164, 5017:1, 5020:1}  # 20 Feb Nov 2017 (NZDT)
+                 5012:153, 5016:164, 5017:1, 5020:1}  # 20 Feb 2017 (NZDT)
 
 msm_instances_2019 = {5017: 1, 5005: 70, 5006: 9, 5015: 4, 5004:252, 5016: 162,
                  5001:72, 5002:1, 5008:1, 5009:28, 5010:3, 5011:10,
                  5012:153, 5016:162, 5017:1, 5020:1}  # 28 Nov 2019 (NZDT)
 
-def instances():
-    if start_ymd[0:4] == "2012":
+def ymd_instances(ymd):
+    if ymd[0:4] == "2012":
         return msm_instances_2012
-    elif start_ymd[0:4] <= "2017":
+    elif ymd[0:4] <= "2015":
+        return msm_instances_2015
+    elif ymd[0:4] <= "2017":
         return msm_instances_2017
-    elif start_ymd[0:4] <= "2019":
+    elif ymd[0:4] <= "2019":
         return msm_instances_2019
+
+def instances():
+    return ymd_instances(start_ymd)
 
 # Config for:   make-probes-list abd get-tr-gz.py (python3)
 
@@ -185,6 +193,9 @@ def stats_fn(msm_id):
     return "%s/stats-%d-%s-%s.txt" % (
         start_ymd, msm_id, start_ymd, ds_id)
 
+def pickle_fn(ymd,msm):
+    return "%s/pickle-%s.pkl" % (ymd, msm)
+
 #target_bn_lo = 0;  target_bn_hi = 1 # Bin 0 only
 #target_bn_lo = 0;  target_bn_hi = 2 # Bin 1 and bin 2
 #target_bn_lo = 0;  target_bn_hi = 4 # Bin 0-3 only
@@ -203,19 +214,19 @@ def msm_asn_graphs_fn(msm_id):
 
 # make-combined-svgs.py
 
-draw_sub_dir = "full"
+def clip_spec_dir(msm_id, mn_trpkts):  # Where we find clip-spec .txt files
+    return "%s/%d-%s%d-drawings" % (
+        start_ymd, msm_id, asn_prefix, mn_trpkts)
 
 def set_sub_dir(sdir):
     global draw_sub_dir
     draw_sub_dir = sdir
 
+draw_sub_dir = "full"
+
 def draw_dir(msm_id, mn_trpkts):
     return "%s/%d-%s%d-drawings/%s" % (
         start_ymd, msm_id, asn_prefix, mn_trpkts, draw_sub_dir)
-
-def clip_spec_dir(msm_id, mn_trpkts):  # for make-clipped-svgs.py
-    return "%s/%d-%s%d-drawings" % (
-        start_ymd, msm_id, asn_prefix, mn_trpkts)
 
 # make-js-slides.py
 

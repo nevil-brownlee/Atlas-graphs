@@ -1,3 +1,4 @@
+# 1640, Mon 12 Apr 2021 (NZST)
 # 1556, Thu 22 Oct 2020 (NZDT)
 # 1646, Tue 21 Apr 2020 (NZST)
 # 1658, Sun 30 Jun 2019 (NZST)
@@ -37,47 +38,46 @@ class OutObjects:
             # kind = n (node) or e (edge)
         self.obj = obj;  self.kind = kind;  self.asn_graphs = asn_graphs
         self.zeros = np.equal(obj.icounts, 0).astype(int)
-        self.times_seen = self.trpkts = self.av_trpkts = 0
+        self.trpkts = self.tot_trpkts = self.times_seen = 0
         self.sd_asns = {}
-            # ASN (n) or src->dst ASNs (e) with same set of zeros
+            # ASN (n, d) or src->dst ASNs (e) with same set of zeroes
 
     def __str__(self):
         zra = one_runs(self.zeros)
         zs = ""
         for j,zrun in enumerate(zra):
             #print("?? j %d, zrun %s" % (j, zrun))
-            if zrun[0] == zrun[1]-1:  # 0,1 pair in zrun
+            if zrun[0] == zrun[1]-1:  # first zero ix, first following 1 ix
                 zs += "%d, " % zrun[0]
             else:  # run of zeroes in zrun
-                zs += "%d-%d, " % (zrun[0],zrun[1])
+                zs += "%d-%d, " % (zrun[0],zrun[1]-1)
+            #print("   zs >%s<" % zs)
         ks = "edge"
-        if self.kind == "n":
+        av_trpkts = self.tot_trpkts/self.times_seen
+        if self.kind == "N":
             ks = "node"
-        n_trpkts = self.trpkts
-        if self.times_seen > 1:
-            ks += "s"
-            n_trpkts /= self.times_seen
+        elif self.kind == "D":
+            ks = "distal node"
+        ks += "s"
         return "%2d %s, %4d pkts (average), zero for bin(s) <%s>" % (
-            self.times_seen, ks, n_trpkts, zs[:-2])
+            self.times_seen, ks, self.tot_trpkts/self.times_seen, zs[:-2])
 
     def __eq__(self, oe):
         return np.array_equal(self.zeros, oe.zeros)
         # oe in oea  is true if  all it's zeros match
 
-    def index(self, oea):  # oea = array of OutEdge objects
-        for oe in oea:
-            if np.array_equal(self.zeros, oe.zeros):
-                return oe  # (pointer to) object
+    def find(self, ooa):  # oea = array of OutObjects
+        for oo in ooa:
+            if np.array_equal(self.zeros, oo.zeros):
+                return oo  # (pointer to) object
         return -1
 
-    def update(self, trpkts, ok):  # ok = Object key
-        self.times_seen += 1
-        self.trpkts += trpkts
+    def update(self, trpkts, ok):  # trpkts into object, object key
         if ok not in self.sd_asns:
             self.sd_asns[ok] = [trpkts]
         else:
             self.sd_asns[ok].append(trpkts)
-        self.av_trpkts += trpkts
+        self.tot_trpkts += trpkts;  self.times_seen += 1
 
 class NodeInfo:  # Called while graphs file is being read
     def update(self, bn, icount, fails, roots, sna):  # Sets info for bin bn
@@ -103,6 +103,7 @@ class NodeInfo:  # Called while graphs file is being read
         self.asn = self.node_asn(name)
         self.update(bn, icount, fails, roots, sna)  # Start from bin bn
         self.av_icount = 0
+        self.pv = None
         
     def node_asn(self, prefix):
         #print("edge.node_asn(%s), node_dir[] %s" % (prefix, self.node_dir[prefix]))
@@ -121,10 +122,12 @@ class NodeInfo:  # Called while graphs file is being read
             there)  #self.icounts.astype(int))  # there)
 
 class Edge:  # Called while graphs file is being read
-    def __init__(self, src, dest, node_dir, n_bins, asn_graph, no_asn_nodes):
+    def __init__(self, src, dest, node_dir, n_bins, asn_graph, 
+            no_asn_nodes, n_depth):
         self.n_from = src;  self.n_to = dest  # Node names
         self.node_dir = node_dir;  self.n_bins = n_bins
         self.asn_graph = asn_graph;  self.no_asn_nodes = no_asn_nodes
+        self.n_depth = n_depth  # Depth of s_nodes
         self.icounts = np.zeros(self.n_bins);  self.av_icount = 0
         self.msm_id = self.pv = self.ps = self.zra = None
         if c.full_graphs:
@@ -132,8 +135,8 @@ class Edge:  # Called while graphs file is being read
             self.asn_to = self.node_asn(dest)
         else:
             self.asn_from = src;  self.asn_to = dest
-        self.last_nb = 0
-        #  Set by GraphInfo.examine_edges() (for ek in self.edges:)
+        #?self.last_nb = 0
+        #?  Set by GraphInfo.examine_edges() (for ek in self.edges:)
         self.present = self.n_ones = self.n_zeroes = \
             self.zra_len = self.n_zruns = self.mx_zrun = \
             self.ora_len = self.o_runs = self.mx_orun = 0
@@ -296,7 +299,6 @@ class GraphInfo:
         all_counts = np.concatenate( (trpkt_counts, trpart_counts) )
         all_trpkts = all_counts*all_sizes
         cum_trpkts = np.cumsum(all_trpkts)  # Cumulative counts
-        #print("sum(parts*size) = %s" % cum_trpkts)
         tot_trpkts = int(cum_trpkts[-1])
         min_trpkts = [3, 9, 27, 81];  pc_covered = []
         for trp in min_trpkts:
@@ -345,6 +347,21 @@ class GraphInfo:
     def variable(self, v_name, v):
         mean = np.mean(v);  iqr = scipy.stats.iqr(v)
         #print("%s  mean = %7.2f, iqr = %7.2f" % (v_name, mean, iqr))
+
+    def test_n_d_overlap(self):
+        dn_in_a_count = 0
+        print("+++ test_n_d_overlap: %d in sn_nodes, %d in all_nodes" % (
+            len(self.sn_nodes), len(self.all_nodes)))
+        for dk in self.sn_nodes:
+            dn = self.sn_nodes[dk]
+            if dn.name in self.all_nodes:
+                 dn_in_a_count += 1
+            else:
+                self.distal_nodes[dn.name] = dn
+            #!!!!print("! %d" % len(self.distal_nodes), end=' ')
+        print("+++    %d distals also in all_nodes" % dn_in_a_count)
+        print("+++    %d other_nodes now in distal_nodes" % len(self.distal_nodes))
+        self.sn_nodes = None
 
     def end_msm_id(self):
         print("End of msm_id %d\n" % self.msm_id)
@@ -397,13 +414,16 @@ class GraphInfo:
         self.stats["t_hops_deleted"] = self.t_hops_deleted
 
         self.dest = ""        # Dest IP address for traces
-        self.all_nodes = {}  # Nodes in graphs file
-        self.distal_nodes = {}  # Nodes from s_nodes lines
+        self.all_nodes = {}  # Nodes from Node lines
+        self.sn_nodes = {}  # Nodes from s_nodes lines
+        self.distal_nodes = {}  # sn_nodes not in all_nodes
         self.nodes_tot = np.zeros(self.n_bins)
             # All nodes in graph (from s_node_nodes)
         self.stats["nodes_tot"] = self.nodes_tot
-        self.outer_nodes = np.zeros(self.n_bins)  # Nodes in s_nodes lines
-        self.stats["outer_nodes"] = self.outer_nodes
+        self.nodes_distal = np.zeros(self.n_bins)  # Nodes with no s_node lines
+        self.stats["nodes_distal"] = self.nodes_distal
+        self.nodes_internal = np.zeros(self.n_bins)  # Nodes in s_nodes lines
+        self.stats["nodes_internal"] = self.nodes_internal
         self.nodes_1hop = np.zeros(self.n_bins)  # 1 hop before dest
         self.stats["nodes_1hop"] = self.nodes_1hop
         self.trpkts_tot = np.zeros(self.n_bins)  # trs from probes
@@ -491,11 +511,14 @@ class GraphInfo:
                     self.inter_asn_edges[bn] = bin_inter_edges
                     self.end_bin(msm_id, bn)
                     self.nodes_tot[bn] = len(s_nodes)
+                    if self.trs_dest[bn] != 0:  # Some trpkts reached dest
+                        self.nodes_tot[bn] += 1
+                    self.nodes_internal[bn] = len(nodes_this_bin)
                     ext_nodes = 0
                     for nn in s_nodes:
                         if nn not in nodes_this_bin:
                             ext_nodes += 1
-                    self.outer_nodes[bn] = ext_nodes
+                    self.nodes_distal[bn] = ext_nodes
 
                 ila = list(map(int, la[1].split()))
                 bn = ila[6]
@@ -555,19 +578,23 @@ class GraphInfo:
                 sna = s_nodes_line.split()  # name, in_count pairs
                 for j in range(0, len(sna)-1, 2):  # name.count pairs, + depth
                     src_name = sna[j];  in_pkts = int(sna[j+1])
-                    if src_name not in self.distal_nodes:
-                        self.distal_nodes[src_name] = NodeInfo(
+                    # <?> if src_name not in self.all_nodes:
+                    ###if src_name not in self.sn_nodes:
+                    if src_name not in self.sn_nodes:
+                        # <?> self.all_nodes[src_name] = NodeInfo(
+                        self.sn_nodes[src_name] = NodeInfo(
                             bn, self.dest, src_name, False,
                             self.node_dir, in_pkts, fails, [], [],
                             self.n_bins, no_asn_nodes)
                         #print("bn %2d src_name %s, icounts %s <<< new" % (
                         #    bn, src_name,
-                        #    self.distal_nodes[src_name].icounts.astype(int)))
+                        #    self.sn_nodes[src_name].icounts.astype(int)))
                     else:
-                        self.distal_nodes[src_name].icounts[bn] = in_pkts
+                        # <?> self.all_nodes[src_name].icounts[bn] = in_pkts
+                        self.sn_nodes[src_name].icounts[bn] = in_pkts
                         #print("bn %2d src_name %s, in_pkts %s" % (
                         #    bn, src_name, 
-                        #    self.distal_nodes[src_name].icounts.astype(int)))
+                        #    self.sn_nodes[src_name].icounts.astype(int)))
                 
                 if name not in nodes_this_bin:
                     nodes_this_bin[name] = True
@@ -603,7 +630,8 @@ class GraphInfo:
                     in_all_edges = False
                     if not e_key in self.all_edges:  # Edges in all bins
                         e = self.all_edges[e_key] = Edge( src, name,
-                            self.node_dir, self.n_bins, asn_graph, no_asn_nodes)
+                            self.node_dir, self.n_bins, asn_graph, 
+                            no_asn_nodes, n_depth)
                     else:
                         e = self.all_edges[e_key]
                         in_all_edges = True
@@ -623,13 +651,22 @@ class GraphInfo:
 
         self.end_msm_id()  # EOF reached
 
+        self.trpkts_tot[bn] = trpkts_tot  # Copied from if bn >= 0 above
         self.n_subroots[bn] = n_subroots
         self.n_subroot_trs[bn] = n_subroot_trpkts
         self.tot_edges[bn] = len(self.edges)
         self.same_asn_edges[bn] = bin_same_edges
         self.inter_asn_edges[bn] = bin_inter_edges
-        self.outer_nodes[bn] = len(s_nodes)
-        self.trpkts_tot[bn] = trpkts_tot
+        self.end_bin(msm_id, bn)
+        self.nodes_tot[bn] = len(s_nodes)
+        if self.trs_dest[bn] != 0:  # Some trpkts reached dest
+            self.nodes_tot[bn] += 1
+        self.nodes_internal[bn] = len(nodes_this_bin)
+        ext_nodes = 0
+        for nn in s_nodes:
+            if nn not in nodes_this_bin:
+                ext_nodes += 1
+        self.nodes_distal[bn] = ext_nodes
         print("<<< bn %d, %d edges. %d in all_edges" % (
             bn, len(self.edges), len(self.all_edges)))
         print("mx_depth_seen = %d" % mx_depth_seen)
@@ -652,6 +689,7 @@ class GraphInfo:
         #info_f.write("End (MxDepth %d)\n" % mx_depth_seen)
         print("EOF reached")
 
+        self.test_n_d_overlap()
         #for n,sr_key in enumerate(self.sub_roots):
         #    sr = self.sub_roots[sr_key]
         #    print("%d: %s" % str(sr))
@@ -737,68 +775,71 @@ class GraphInfo:
                 print("diff_a %s" % diff_a)
 
     def compute_node_stats(self, nodes, mn_trpkts):
-        # Returns array of NodeInfo objects <<<
+        # Returns array of NodeInfo objects
         keep_nodes = [];  n_stable = 0  # stable = present in all bins
-        for nk in nodes:
+        unk_nodes = [];  # Nodes with no ASN
+        for j,nk in enumerate(nodes):
             n = nodes[nk]
-            #print("@@@ nk %s, %s (%s)" % (nk, n, type(n)))
+            if n.asn == "unknown":
+                unk_nodes.append(nk)
+            n.o_key = "%s, %s" % (n.node_asn(n.name), n.name)
+
             n.icounts = np.where(n.icounts < mn_trpkts, 0, n.icounts)
             n.present = np.not_equal(n.icounts, 0).astype(int)
             n.n_ones = np.count_nonzero(n.icounts)
-            if n.n_ones == 0:
-                continue  #  All icounts < mn_trpkts
             if n.n_ones == n.n_bins:
                 n_stable += 1
                 continue  # Not interested in stable nodes
-            self.p_counts[n.n_ones] += 1  # GI attribute for Edges
-            n.n_zeroes = n.n_bins-n.n_ones
-            zra = zero_runs(n.icounts)
-            zra_len = zra[:,1]-zra[:,0]  # Run-of-zeroes lengths
-            n.n_zruns = 0;  n.mx_zrun = 0
-            if len(zra_len) != 0:
-                n.n_zruns = len(zra_len)
-                n.mx_zrun = zra_len.max()
-            ora = one_runs(n.icounts)
-            ora_len = ora[:,1]-ora[:,0]  # Run-of-ones lengths
-            n.n_oruns = 0;  n.mx_orun = 0
-            if len(ora_len) != 0:
-                n.n_oruns = len(ora_len)
-                n.mx_orun = ora_len.max()
-            n.av_icount = 0
-            if n.n_ones != 0:
-                n.av_icount = np.average(
-                    n.icounts, axis=0, weights=n.icounts.astype(bool))
-            n.pv = n.present
-            keep_nodes.append(n)
-        return keep_nodes, n_stable
+            elif n.n_ones != 0:
+                #print("%5d %s: n_nones = %s" % (j, n.name, n.n_ones))
+                self.p_counts[n.n_ones] += 1  # GI attribute for Edges
+                n.n_zeroes = n.n_bins-n.n_ones
+                zra = zero_runs(n.icounts)
+                zra_len = zra[:,1]-zra[:,0]  # Run-of-zeroes lengths
+                n.n_zruns = 0;  n.mx_zrun = 0
+                if len(zra_len) != 0:
+                    n.n_zruns = len(zra_len)
+                    n.mx_zrun = zra_len.max()
+                ora = one_runs(n.icounts)
+                ora_len = ora[:,1]-ora[:,0]  # Run-of-ones lengths
+                n.n_oruns = 0;  n.mx_orun = 0
+                if len(ora_len) != 0:
+                    n.n_oruns = len(ora_len)
+                    n.mx_orun = ora_len.max()
+                n.av_icount = 0
+                if n.n_ones != 0:
+                    n.av_icount = np.average(
+                        n.icounts, axis=0, weights=n.icounts.astype(bool))
+                n.pv = n.present
+                #if n.n_ones >= c.n_bins/4 and \
+                #        n.n_oruns >= 1 and n.n_zruns <= 5:
+                if n.mx_orun > c.n_bins/4 and \
+                        n.n_zruns >= 1 and n.n_oruns >= n.n_zruns:
+                    keep_nodes.append(n)
+        return keep_nodes, unk_nodes, n_stable
 
-    def examine_nodes(self, mn_trpkts):
-        nodes, n_stable = self.compute_node_stats(self.all_nodes, mn_trpkts)
-        self.all_nodes = nodes
-        print("$exn %d nodes in self.all_nodes, %d were stable" % (
-            len(nodes), n_stable))
-        d_nodes, d_stable = self.compute_node_stats(
-            self.distal_nodes, mn_trpkts)
-        print("$exd %d d_nodes in self.all_nodes, %d were stable" % (
-            len(d_nodes), d_stable))
-        distals = []
-        for n in d_nodes:
-            if n.n_zeroes >= 2 and n.n_ones > 8:
-                distals.append(n)
-        print("$exd: %d distals with >=2 zeroes and >8 ones" % len(distals))
-        self.distal_nodes = distals
-        return n_stable
-
-    def examine_edges(self, mn_trpkts):
-        n_stable = 0
-        for ek in self.all_edges:
+    def compute_edge_stats(self, edges, mn_trpkts):
+        keep_edges = [];  e_stable = 0  # stable = present in all bins
+        unk_edges = [];  # Edge end-points with no ASN
+        for ek in edges:
             e = self.all_edges[ek]
+            if e.asn_from == "unknown" and e.n_from not in a_unknown:
+                unk_edges.append(e.n_from)
+            if e.asn_to == "unknown" and e.n_to not in a_unknown:
+                unk_edges.append(e.n_to)
+            if self.asn_graph:  # Node names are ASNs
+                e.o_key = "%s->%s" % (e.n_from, e.n_to)
+            else:
+                e.o_key = "%s->%s, %s->%s" % (
+                    e.asn_from, e.asn_to, e.n_from, e.n_to)
             #if not e.inter_as:  # Only interested in Inter-AS edges
             #    continue
             e.icounts = np.where(e.icounts < mn_trpkts, 0, e.icounts) 
-            self.n_ones = np.count_nonzero(e.icounts)  # Nbr of bins present
             e.present = np.not_equal(e.icounts, 0).astype(int)
             e.n_ones = np.count_nonzero(e.present)  # Nbr of bins present
+            if e.n_ones == c.n_bins:
+                e_stable += 1
+                continue
             self.p_counts[e.n_ones] += 1
             e.n_zeroes = self.n_bins-e.n_ones
             e.zra = zero_runs(e.icounts)
@@ -813,16 +854,17 @@ class GraphInfo:
             e.mx_orun = 0
             if len(ora_len) != 0:
                 e.mx_orun = ora_len.max()
-            if e.n_ones == e.n_bins:
-                n_stable += 1
+            #if e.n_ones != 0:
             if e.n_ones != 0:
                 e.av_icount = np.average(
                     e.icounts, axis=0, weights=e.icounts.astype(bool))
                     # For type bool, False = 0, True = non-zero
                     # weights (above) treats bools as ints
-
-            if not ek in self.all_edges:
-                self.all_edges[ek] = e
+            #if e.n_ones >= c.n_bins/4 and \
+            #        e.n_oruns >= 1 and e.n_zruns <= 5:
+            if e.mx_orun > c.n_bins/4 and \
+                    e.n_zruns >= 1 and e.n_oruns > e.n_zruns:
+                keep_edges.append(e)
 
             e.pv = e.present  # For diff()
             #s = int(ipaddress.IPv4Address(e.n_from))  # For diff2 and 3
@@ -830,8 +872,9 @@ class GraphInfo:
             #na = np.array( [s,d] )
             #e.pv = np.hstack( [e.present, na] )  # Keep presence vector first
 
-        print("examine_edges: n_stable = %d" % n_stable)
-        return n_stable
+        print("compute_edge_stats: returns %d edges, e_stable = %d" % (
+            len(keep_edges), e_stable))
+        return keep_edges, unk_edges, e_stable
         
     def examine_subroots(self):  # For presence-bars-v-timebins.py
         self.sub_roots = []
@@ -841,67 +884,6 @@ class GraphInfo:
             self.sub_roots.append( 
                 SubRoot(sr_key, self.sub_root_icounts[sr_key]) )
                 # All sub_root stats are computed by SubRoot()
-
-    def classify_nodes(self):
-        interest0 = []
-        print("classify_nodes: %d distal nodes" % len(self.distal_nodes))
-        #for j,n in enumerate(self.distal_nodes):
-        #    print("%3d %s  (%s)" % (j, n, type(n)))
-
-        for n in self.all_nodes:  # i.e. all those we can classify
-            print("&&& n = %s (%s)" % (n, type(n)))
-            #print("n.name %s, n_zruns %d, av_icount %d: %s" % (
-            #    n.name, n.n_zruns, n.av_icount, n.icounts))
-            #if n.n_ones >= c.n_bins/4:
-            if n.n_ones >= c.n_bins/4 and n.n_zruns <= 5:
-                nzr = np.array( [n.n_zruns] )
-                n.pv = np.hstack( [n.present, nzr] )  
-                    # Keep presence vector first
-                interest0.append(n)
-        return interest0
-
-    def classify_edges(self):
-        interest0 = []
-        n_seldom = n_lower = n_interesting = n_upper = n_mostly = 0
-        n_inter_AS = 0
-        for e_key in self.all_edges:  # i.e. all those we could classify
-            e = self.all_edges[e_key]
-            if e.inter_as:
-                n_inter_AS += 1
-            #    continue
-            ones_c = e.n_ones
-            if ones_c < 6:
-                n_seldom += 1;  continue  # Not interesting
-            elif ones_c < 22:
-                n_lower += 1
-            elif ones_c < 26:
-                n_interesting += 1
-            elif ones_c < 42:
-                n_upper += 1
-            else:
-                n_mostly += 1
-
-            # Filter 1: same-ASN switches, uses edge_dest()
-            #if e.mx_zrun > 10 and e.mx_orun > 10 and not e.inter_as:
-            #     interest0.append(e)
-
-            # Filter 2: ditto, but allow inter-as edges
-            #if e.mx_zrun > 10 and e.mx_orun > 10:
-            #     interest0.append(e)
-
-            # Filter 3: allow 1 or 2 oruns or zruns
-            #if e.mx_zrun > 8 and e.mx_orun > 8 and \
-            #        e.n_zruns == 1 and e.n_oruns <= 2:
-            #    interest0.append(e)
-
-            if e.n_zruns >= 1:
-                interest0.append(e)
-
-        n_tot = n_seldom+n_lower+n_interesting+n_upper+n_mostly 
-        print("%d edges classified" % n_tot)
-        print("  %d seldom, %d lower, %d interesting, %d upper, %d mostly" % (
-            n_seldom, n_lower, n_interesting, n_upper, n_mostly))
-        return interest0
 
     def classify_variances(self):
         v_edges = []

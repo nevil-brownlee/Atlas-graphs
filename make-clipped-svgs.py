@@ -75,7 +75,7 @@ nodes_to_keep = [];  bn_lo = bn_hi = -1
 cmd = "missing";  pb_type = "?"
 sd = descr = scalef = pbtyp = margin = bins = nodes = errcnt = 0
 for line in csf:  # Parse cilp-spec file - - - - - - - - - - - - -
-    #print("line >%s<" % line.strip())
+    print("line >%s<" % line.strip())
     line = line.split("#", 1)[0]  # Remove # and chars after #
     if len(line) <= 1:  # Ignore blank lines
         print("blank line")
@@ -101,7 +101,7 @@ for line in csf:  # Parse cilp-spec file - - - - - - - - - - - - -
     elif cmd == "bins":  # bins (range of bins to use)
         clip_bn_lo = int(la[1]);  clip_bn_hi = int(la[2])
             # clip_bn_lo = first_bin_kept
-            # clip_bn_hi = last_bin_kept + 1 (python-style 'stop' value)
+            # clip_bn_hi = last_bin_kept  # ???? + 1 (python-style 'stop' value)
         bins += 1
     elif cmd == "nodes":
         for addr in la:
@@ -133,7 +133,7 @@ print("clip_bins: lo %d, hi %d" % (clip_bn_lo, clip_bn_hi))
 print("nodes_to_keep: %s" % nodes_to_keep)
 
 c.set_sub_dir(clip_name)
-print("draw_dir = %s" % c.draw_dir(5017, 30))
+#print("draw_dir = %s" % c.draw_dir(msm_id, mn_trpkts))
 
 class WholeGraph:
     node_f = None
@@ -201,8 +201,9 @@ class WholeGraph:
         #of.write("  size = \"11.7,8.27\";\n")  # A4 Landscape in inches
         #of.write("  fontsize = 8;\n")  # Ignored by dot and neato!
 
-        self.title = "      %s/%sgraphs-%s  %s  %s" % (
-            reqd_msms[0], c.asn_prefix, msm_id, clip_spec[0], pb_type)
+        self.title = "      %s/%sgraphs-%d-%d  %s  %s" % (
+            reqd_msms[0], c.asn_prefix, msm_id, mn_trpkts,
+            clip_spec[0], pb_type)
         #self.blx = 120  # x value for bottom left corner
         #of.write(  #  Title at bottom left of image
         #    " BL [shape=plaintext,label=\".  %s\"," \
@@ -450,7 +451,7 @@ for msm_id in reqd_msms:
                         #    nk, pops[nk]))
         return clipped_pops
 
-    for bn in range(clip_bn_lo,clip_bn_hi):
+    for bn in range(clip_bn_lo,clip_bn_hi+1):
         bg = dg.bga[bn];  dest = dg.dest
 
         bg.pops = strip_unwanted_nodes(bg.pops)

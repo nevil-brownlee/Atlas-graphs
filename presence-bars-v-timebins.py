@@ -1,3 +1,4 @@
+# 1733, Thu  6 May 2021 (NZST)
 # 1623, Thu 12 Nov 2020 (NZDT)
 # 1745, Thu  3 Sep 2020 (NZST)
 # 1636, Tue 31 Mar 2020 (NZDT)
@@ -33,7 +34,7 @@ import graph_info as grin
 
 import config as c
 
-# Extra command-line parameters (after those parsed by getparamas.py):
+# Extra (+) command-line parameters (after those parsed by getparamas.py):
 #
 #   n  check edge presence for different kinds of 'interesting' nodes
 #                           (-f full_graphs may be True or False)
@@ -51,7 +52,7 @@ asn_graphs = False
 n_presence = dn_presence = e_presence = e_variance = sr_presence =\
     in_to_dest = plot_items = walk_graph = no_ASNs = False
 
-pp_names = " m! y! a mxd= mntr= n d e v s i p w"  # indexes 0 to 13
+pp_names = " m! y! a mxd= mntr= n d e v s i p w"  # indexes 0 to 12
 pp_ix, pp_values = c.set_pp(pp_names)  # Set up config info
 mx_depth = c.draw_mx_depth  # Default paremeters for drawing
 mn_trpkts = c.draw_mn_trpkts
@@ -134,7 +135,7 @@ def plot_bars(group, msm_id, items, bar_colour, first_ix):
     if group == "Sub-root":
         w = 7
     if n_items == 0:
-        print("!!! No sub-roots to plot !!!")
+        print("!!! No items to plot !!!")
         return
     if n_items <= 40:
         n_items = len(items);  h = 1.0 + n_items*0.2  # h = n_items*0.43
@@ -196,7 +197,7 @@ def plot_bars(group, msm_id, items, bar_colour, first_ix):
     hy = []  # Draw horizontal and vertical lines for grid
     for f in range(n_items+1):
         hy.append(f*1.5 + 0.5)
-    print("n_items=%d, hy=%s" % (n_items, hy))
+    #print("n_items=%d, hy=%s" % (n_items, hy))
     hx_min = np.ones(len(hy))*(-5.0)
     hx_max = np.ones(len(hy))*340.0  # Box is 340 wide (for all n_bins)
     xy.hlines(hy, hx_min, hx_max, linewidth=0.2, color='black')
@@ -232,16 +233,16 @@ def plot_bars(group, msm_id, items, bar_colour, first_ix):
 
     ns_group = group.replace(" ", "")
     if asn_graphs:
-        pfn = "%s/%d-%d-%s%s-%d.pdf" % (
+        pfn = "%s/%d-%d-%s%s-%d.svg" % (
             c.start_ymd, msm_id, mn_trpkts, c.asn_prefix, ns_group, first_ix)
     else:  # asn_prefix is null
-        pfn = "%s/%d-%d-%s-%d.pdf" % (
+        pfn = "%s/%d-%d-%s-%d.svg" % (
             c.start_ymd, msm_id, mn_trpkts, ns_group, first_ix)
 
     print("save to %s" % pfn)
     pplt.savefig(pfn)
 
-def reorder_list(items_list, dist_fn):
+def reorder_list(items_list, dist_fn, type):
     pva = []
     if len(items_list) < 4:
         for it in items_list:
@@ -274,9 +275,11 @@ def reorder_list(items_list, dist_fn):
     
     def linkage_order(items_list):
         pva = []  # Original order
+        ###print("ITEMS_LIST %s" % items_list)
         for it in items_list:
+            ###print("??? it >%s<  (%s)" % (it, type(it)))
             pva.append(it.pv)  # general, i.e. ust use obj.pv
-            #print(e)  ##############################
+            ###print("linkage_order: %s", it)  ##############################
         rq_sz = find_nc_size(len(pva))
         print("%d items to order (rq_sz = %d)" % (len(items_list), rq_sz))
         epv = np.zeros(len(pva[0]))  # Empty presence vector
@@ -292,8 +295,8 @@ def reorder_list(items_list, dist_fn):
         # distance between clusters Z[i, 0] and Z[i, 1] is given by Z[i, 2]. 
         # fourth value Z[i, 3] = nbr of original observatns in the new cluster.
         n = len(items_list)
-        print("\nitems_list has %d edges, there were %d iterations" % (
-            n, len(Z)))
+        print("\nitems_list has %d %s, there were %d iterations" % (
+            n, type, len(Z)))
         diff_order = []
         for j in range(len(Z)):
             it0 = int(Z[j,0]);   it1 = int(Z[j,1])
@@ -305,20 +308,23 @@ def reorder_list(items_list, dist_fn):
 
         pvr = []  # Re-ordered
         #for j in range(0,len(diff_order)):
-        ne = 35
+        ne = 1000  # 35
         if len(diff_order) < ne:
             ne = len(diff_order)
         for j in range(0,ne-1):
             this_ix = diff_order[j]
             pvr.append(items_list[this_ix])
         #print("@@ pvr = %s" % pvr)
-        return pvr
+        return pvr  # Most similar 34 (ne-1) objects
 
     svr_items = linkage_order(items_list)
     print("back from linkage_order(), len(svr_items) = %d" % len(svr_items))
+    gt_e_min_items = []
     for n,svk in enumerate(svr_items):  
         print("%3d %s" % (n,svk))  ##### OK to here ######  <- Items
-    return svr_items
+        if svk.av_icount >= e_min:
+             gt_e_min_items.append(svk)
+    return gt_e_min_items
 
     sublists = collections.OrderedDict();
     for item in svr_items:
@@ -367,17 +373,59 @@ yval_array = []  # y values for dest icounts
 
 sf_offset = 3
 
-n_min = mn_trpkts*2  # Min "interesting" av_icount for nodes,
-d_min = mn_trpkts*5  # distal nodes
-e_min = mn_trpkts*3  # and edges
+e_min = mn_trpkts*3  # Min "interesting" av_icount for edges,
+n_min = mn_trpkts*3  # nodes and
+d_min = mn_trpkts    # distal nodes
 n_lines = []  # Summary lines for nodes,
 d_lines = []  # distal nodes
 e_lines = []  # and edges
 
-for msm_id in reqd_msms:
+class YM_counts:
+    def __init__(self, ymd, msm_id):
+        self.ymd = ymd;  self.msm_id = msm_id
+        self.found = [0, 0, 0]  # nodes, distals, edges
+        self.non_stable = [0, 0, 0]
+        self.classified = [0, 0, 0]
+        self.interesting = [0, 0, 0]
+
+    def hdr(self):
+        return "  msm_id    nodes   distals   edges"
+    def f_row(self):
+        return("%7d  %7d  %7d  %7d" % (self.msm_id, 
+            self.found[0], self.found[1], self.found[2]))
+    def ns_row(self):
+        return("%7d  %7d  %7d  %7d" % (self.msm_id, 
+            self.non_stable[0], self.non_stable[1], self.non_stable[2]))
+    def c_row(self):
+        return("%7d  %7d  %7d  %7d" % (self.msm_id, 
+            self.classified[0], self.classified[1], self.classified[2]))
+    def i_row(self):
+        return("%7d  %7d  %7d  %7d" % (self.msm_id, 
+            self.interesting[0], self.interesting[1], self.interesting[2]))
+    
+    def add_found(self, o_type, val):
+        x = "NDE".index(o_type[0])
+        self.found[x] = val
+
+    def add_non_stable(self, o_type, val):
+        x = "NDE".index(o_type[0])
+        self.non_stable[x] = val
+
+    def add_classified(self, o_type, val):
+        x = "NDE".index(o_type[0])
+        self.classified[x] = val
+
+    def add_interesting(self, o_type, val):
+        x = "NDE".index(o_type[0])
+        self.interesting[x] = val
+
+ymd = reqd_ymds[0];  ymc = []
+for jm,msm_id in enumerate(reqd_msms):
     ids = [];  pca = [];  inter_ca = []
     all_edges = []  # List of all 'interesting' edges for all msm_ids
     msm_dest = c.msm_dests[msm_id][0]
+    ymc.append(YM_counts(ymd, msm_id))
+
     if asn_graphs:
         n_asns = 0;  asn_ids = {}
     else:
@@ -398,13 +446,102 @@ for msm_id in reqd_msms:
     gi = grin.GraphInfo(msm_id, asn_ids, n_bins, asn_graphs,
         n_asns, no_asn_nodes, mx_depth, mn_trpkts)
             # Pruning as for drawing svgs
-                            
-    #print("-a- %d sub_roots found" % len(gi.sub_roots))
+             
+    print("@@@ back from GraphInfo() @@@")
+    print("@@@ len(gi.all_nodes) = %d, len(gi.distal_nodes) = %d" % (
+        len(gi.all_nodes), len(gi.distal_nodes)))
 
 #                   0        1      2               3       4
     colours = ['black', 'brown', 'red',   'darkorange', 'gold',
 #                   5       6         7       8            9       10
                'green', 'blue', 'violet', 'grey', 'lightblue', 'black']
+
+    def make_node_plot_labels(msm_id, nodes):
+        print("msm_id %d has %d nodes" % (
+            msm_id, len(nodes)))
+        for j,n in enumerate(nodes):
+            #print("plot node n: (%s) %s" % (type(n), n))
+            if no_ASNs:
+                nn = "%s->%s %4d pkts " % (n.n_from, n.n_to, n.av_icount)
+            elif c.full_graphs:
+                nn = "%s   %s %5d pkts " % (
+                    n.asn, n.name, n.av_icount)
+            else:
+                nn = "%s %5d pkts " % (
+                    n.name, n.av_icount)
+            n.plot_label = nn
+
+    def make_edge_plot_labels(msm_id, edges):
+        print("msm_id %d has %d edges" % (
+            msm_id, len(edges)))
+        for j,e in enumerate(edges):  # Assume we always have asn info :-)
+            if asn_graphs:  # Nodes names are ASNs
+                e.plot_label = "%s->%s  %5d pkts" % (
+                    e.n_from, e.n_to, e.av_icount)
+            else:
+                e.plot_label = "%s->%s, %s->%s %5d pkts" % (
+                    e.asn_from, e.asn_to, e.n_from, e.n_to, e.av_icount)
+
+    def summarise_items(items, item_type, filter_fn, diff_fn, min_count,
+            plt_label_fn, colour, sum_lines):
+        if not item_type[0] in ["N", "D", "E"]:
+            print("summarise_items(%s): item_type not N, D or E" % item_type)
+            exit()
+
+        print("summarise_items: %d items, type %s" % (len(items), item_type))
+        oepa = []  # Items for each object
+        i_nodes, i_unknown, i_stable = filter_fn(items, mn_trpkts)
+        print("$szi %d items in gi.all_nodes, %d were stable"
+                ", %d unknown ASNs" % (
+            len(i_nodes), i_stable, len(i_unknown)))
+        ymc[jm].add_found(item_type[0], len(items)+i_stable)
+        ymc[jm].add_non_stable(item_type[0], len(items))
+        ymc[jm].add_classified(item_type[0], len(i_nodes))
+
+        items = reorder_list(i_nodes, diff_fn, "nodes")
+        for i in items:  # Look for "interesting" nodes
+            #print("  %% n = %s (%s)" % (n, type(n)))
+            i.pv = i.pv[:n_bins]
+
+            if i.av_icount >= min_count:
+                oo = grin.OutObjects(i, item_type[0], asn_graphs)
+                if oo not in oepa:
+                    oepa.append(oo)
+                    #print("OO created: %s" % oo)
+                oep = oo.find(oepa)  # pointer to oo in oepa
+                oep.update(i.av_icount, i.o_key)  # Object key
+                #print("   update %s: %s + %d = %d, %d" % (oo,  oo.obj.name, 
+                #    n.av_icount, oo.av_trpkts, oo.times_seen))
+
+        ymc[jm].add_interesting(item_type[0], len(oepa))
+
+        print("%d nodes with unknown asns found <<<" % len(i_unknown))
+
+        if plot_items:
+            plt_label_fn(msm_id, items)
+            plot_bars("%s Presence" % item_type, msm_id, items, colour, 0)
+
+        line_txt = "\n%s%s %s presence: zero-runs . . .\n" % (
+            ' '*(sf_offset), msm_id, item_type)
+        sum_lines.append(line_txt)
+        #min_count = n_min  # Min "interesting" av_icount
+
+        for oe in oepa:
+            sum_lines.append("%s%s\n" % (
+                ' '*(sf_offset+3), oe))
+            for ok in oe.sd_asns:
+                ocounts = np.array(oe.sd_asns[ok]).astype(int)
+                name = str(ok)
+                if name[0:7] == "unknown":
+                    name = ok[9:]
+                sum_lines.append("%s%5d for %s\n" % (
+                    ' '*(sf_offset+6), np.sum(ocounts), name))
+
+        if len(i_unknown) != 0 and not asn_graphs:
+            ua_unknown_f = open(c.all_unknown_nodes_fn(), 'a')            
+            for an in i_unknown:
+                ua_unknown_f.write(an+"\n")
+            ua_unknown_f.close()
 
     if n_presence or dn_presence:  # Check node presence (for bar plots)
         ids = [];  pca = []
@@ -414,9 +551,10 @@ for msm_id in reqd_msms:
             av_orun = np.average(n.ora_len)
             av_zrun = np.average(n.zra_len)
             av_ms = av_orun/av_zrun
-            print("%d: %d  ones=%d, n_oruns=%d, n_zruns=%d, mx_orun=%d, mx_zrun=%d, av_orun=%.2f, av_zrun=%.2f, av_ms=%.2f\n%s" % (
-                ix, msm_id, n.n_ones, n.n_oruns, n.n_zruns, n.mx_orun, n.mx_zrun, av_orun, av_zrun, av_ms,
-                    n.ps))
+            print("%d: %d  ones=%d, n_oruns=%d, n_zruns=%d, mx_orun=%d"
+                ", mx_zrun=%d, av_orun=%.2f, av_zrun=%.2f, av_ms=%.2f\n%s" % (
+                ix, msm_id, n.n_ones, n.n_oruns, n.n_zruns, n.mx_orun,
+                n.mx_zrun, av_orun, av_zrun, av_ms, n.ps))
             #if ac:
             #    print("ac = %s" % gi.acor(n.present))
 
@@ -466,120 +604,25 @@ for msm_id in reqd_msms:
                 + np.sum((pv1 != pv2).astype(int))*100
             return dist
 
-        def make_node_plot_labels(msm_id, nodes):
-            print("msm_id %d has %d nodes" % (
-                msm_id, len(nodes)))
-            #if len(nodes) <= 2:
-            #    print("  >>> not enough to plot")
-            #    return
-            for j,n in enumerate(nodes):
-                #print("plot node n: (%s) %s" % (type(n), n))
-                if no_ASNs:
-                    nn = "%s->%s %4d pkts " % (n.n_from, n.n_to, n.av_icount)
-                elif c.full_graphs:
-                    nn = "%s   %s %5d pkts " % (
-                        n.asn, n.name, n.av_icount)
-                else:
-                    nn = "%s %5d pkts " % (
-                        n.name, n.av_icount)
-                n.plot_label = nn
-
-        def summarise_nodes(nodes, obj_type, diff_fn,  colour, i_min):
-            a_unknown = []  # Names of nodes with no ASN
-            #for j,n in enumerate(nodes):
-            #    print("summarise_nodes %2d, (%s), %s)" % (j, type(n), n))
-            make_node_plot_labels(msm_id, nodes)
-            print("Abougt to call reorder_list of %s nodes" % obj_type)
-            nodes = reorder_list(nodes, diff_fn)
-            for n in nodes:  # Check for unknown nodes
-                n.pv = n.pv[:n_bins]
-                if n.asn == "unknown":
-                    a_unknown.append(n.name)
-            print("%d unknown asns found <<<" %len(a_unknown))
-            plot_bars("%s Presence" % obj_type, 
-                #???msm_id, nodes[0:34], colour, 0)
-                msm_id, nodes, colour, 0)
-
-            n_lines.append("\n%s%s %s presence: zero-runs . . .\n" % (
-                ' '*(sf_offset), msm_id, obj_type))
-            #i_min = n_min  # Min "interesting" av_icount
-            oepa = []  # nodes for each ASN
-            for j,n in enumerate(nodes):  # Look for "interesting" nodes
-                if n.av_icount >= i_min and \
-                       n.n_zruns != 0 and n.n_zruns <= 3:
-                    oe = grin.OutObjects(n, "n", asn_graphs)
-                    if oe not in oepa:
-                        oepa.append(oe)
-                    oep = oe.index(oepa)  # pointer to eo in oea
-                    ok = "%s, %s" % (n.node_asn(n.name), n.name)  # Object Key
-                    oep.update(n.av_icount, ok)
-
-            #sni_f = open(c.s_n_info_fn(msm_id), "r")
-            #for line in sni_f:
-            #    print(line.strip())
-            #exit()
-
-            for oe in oepa:
-                n_lines.append("%s%s\n" % (
-                    ' '*(sf_offset+3), oe))
-                for ok in oe.sd_asns:
-                    ocounts = np.array(oe.sd_asns[ok]).astype(int)
-                    name = str(ok)
-                    if name[0:7] == "unknown":
-                        name = ok[9:]
-                    n_lines.append("%s%5d for %s\n" % (
-                        ' '*(sf_offset+6), np.sum(ocounts), name))
-            #for j,line in enumerate(n_lines):
-            #    print("%3d  %s" % (j, line), end='')
-
-            if len(a_unknown) != 0:
-                ua_unknown_f = open(c.all_unknown_nodes_fn(), 'a')
-                for an in a_unknown:
-                    ua_unknown_f.write(an+"\n")
-                ua_unknown_f.close()
-
-        print("-d- about to examine %d nodes()" % len(gi.all_nodes))
-        n_stable = gi.examine_nodes(mn_trpkts)  # Compute Node stats values
-        #        # Also makes list of 'interesting' nodes in gi.all_nodes
-        print("%d stable nodes" % n_stable)
-
-        print("-e- %d distal nodes found" % len(gi.distal_nodes))
-        #nnn = 0
-        #for n in gi.distal_nodes:
-        #    print("n %s\n   n_zruns %d, mx_zrun %d" % (
-        #          n, n.n_zruns, n.mx_zrun))
-        #    if nnn == 5:
-        #        break
-
         if n_presence:
             if len(gi.all_nodes) < 5:
                 print("\nOnly %d all_nodes were 'interesting' !!!" % \
                     len(gi.all_nodes))
-            nodes = gi.classify_nodes()
-            print("classify_nodes() found %d interesting nodes" % len(nodes))
-
-            if nodes and plot_items:
-                summarise_nodes(nodes, "Node", node_dist3, "green", n_min)
+            else:
+                summarise_items(gi.all_nodes, "Node",
+                    gi.compute_node_stats, node_dist3, n_min, 
+                    make_node_plot_labels, "green", n_lines)
 
         if dn_presence:  # Distal Node presence
-            dn_nodes = []
-            for j,n in enumerate(gi.distal_nodes):
-                dn_nodes.append(n)
-            if dn_nodes and plot_items:
-                #summarise_nodes(dn_nodes, "Distal Node", node_dist3,
-                summarise_nodes(dn_nodes, "Distal Node", node_dist4,
-                    "magenta", d_min)
-
-    def make_edge_plot_labels(msm_id, edges):
-        print("msm_id %d has %d edges" % (
-            msm_id, len(edges)))
-        for j,e in enumerate(edges):  # Assume we always have asn info :-)
-            if asn_graphs:  # Nodes names are ASNs
-                e.plot_label = "%s->%s  %5d pkts" % (
-                    e.n_from, e.n_to, e.av_icount)
+            if len(gi.distal_nodes) < 5:
+                print("\nOnly %d all_nodes were 'interesting' !!!" % \
+                    len(gi.distal_nodes))
             else:
-                e.plot_label = "%s->%s, %s->%s %5d pkts" % (
-                    e.asn_from, e.asn_to, e.n_from, e.n_to, e.av_icount)
+                print("n dn_presence: len(gi.distal_nodes) = %d" % len(gi.distal_nodes))
+                summarise_items(gi.distal_nodes, "Distal Node",
+                    gi.compute_node_stats, node_dist4, d_min,
+                    make_node_plot_labels, "magenta", d_lines)
+                print("len(gi.distal_nodes) after summarise = %d" % len(gi.distal_nodes))
 
     if e_presence:  # Check Edge presence
         pca = []
@@ -622,75 +665,14 @@ for msm_id in reqd_msms:
             if epv1[-1] == epv2[-2] or epv2[-2] == epv1[-1]:
                 # s1 == d2, i.e. ongoing path
                 pd = 0
-            return dist + pd + ss+dd
-
+            return dist + pd + sd+dd
 
         same_counts, inter_counts = gi.asn_edges()
         pca.append(same_counts);  inter_ca.append(inter_counts)
 
-        print("-d- about to examine_edges()")
-        n_stable = gi.examine_edges(mn_trpkts)  # Compute stats values for each Edge
-        #        # Also makes list of 'interesting' edges in gi.all_edges
-        print("-y- n_stable = %d" % n_stable)
-
-        if len(gi.all_edges) < 5:
-            print("\nOnly %d edges were 'interesting' !!!" % len(all_edges))
-        edges  = gi.classify_edges()
-        print("classify_edges() found %d interesting edges" % len(edges))
-
-        if plot_items:
-            edges = reorder_list(edges, edge_dist)
-            a_unknown = {}
-            n2 = 0
-            for e in edges:  # Strip src, dest from pv
-                e.pv = e.pv[:n_bins]
-                if e.asn_from == "unknown" and e.n_from not in a_unknown:
-                    a_unknown[e.n_from] = 2;  n2 += 1
-                if e.asn_to == "unknown" and e.n_to not in a_unknown:
-                    a_unknown[e.n_to] = 2;  n2 += 1
-            print("%d unknown asns found <<<" % n2)
-            make_edge_plot_labels(msm_id, edges)
-            plot_bars("Edge Presence", msm_id, edges[0:34], 'blue', 0)
-
-            if no_ASNs:
-                print("  no ASNs, can't print 'interesting' edges")
-            else:
-                i_min = e_min  # min "interesting" av_icount
-                e_lines.append("\n%s%s Edge presence: zero-runs . . .\n" % (
-                    ' '*(sf_offset), msm_id))
-                oepa = []  # Edges for each ASN|prefix pair
-                for j,e in enumerate(edges):  # Look for "interesting" edges
-                    if e.av_icount >= i_min and \
-                           e.n_zruns != 0 and e.n_zruns <= 3:
-                        #e_lines.append("%2d  %s -> %s  %d pkts" % (
-                        #    j, e.asn_from, e.asn_to, e.av_icount))
-                        #print("e.icounts = %s" % e.icounts)
-
-                        oe = grin.OutObjects(e, "e", asn_graphs)
-                        if oe not in oepa:
-                            oepa.append(oe)
-                        oep = oe.index(oepa)  # pointer to eo in oea
-                        if asn_graphs:
-                            ek = "%s->%s" % (  # Node names are ASNs
-                                e.n_from, e.n_to)
-                        else:
-                            ek = "%s->%s, %s->%s" % (
-                                e.asn_from, e.asn_to, e.n_from, e.n_to)
-                        oep.update(e.av_icount, ek)
-                for oe in oepa:
-                    e_lines.append("%s%s\n" % (
-                        ' '*(sf_offset+3), oe))
-                    for ek in oe.sd_asns:
-                        ecounts = np.array(oe.sd_asns[ek]).astype(int)
-                        e_lines.append("%s%5d for %s\n" % (
-                            ' '*(sf_offset+6), np.sum(ecounts), ek))
-
-            if len(a_unknown) != 0:
-                ua_unknown_f = open(c.all_unknown_nodes_fn(), 'a')
-                for nk in a_unknown:
-                    if a_unknown[nk] == 2:
-                        ua_unknown_f.write(nk+"\n")
-                ua_unknown_f.close()
+        summarise_items(gi.all_edges, "Edge", 
+            gi.compute_edge_stats, edge_dist3, e_min, 
+            make_edge_plot_labels, "blue", e_lines)
 
     if e_variance:  # Check Edge variance (for colour-bar plots)
         edges = gi.classify_variances()
@@ -706,27 +688,28 @@ for msm_id in reqd_msms:
             #print("var_dist returns %s" % np.sum(diff_v))
             return np.sum(diff_v)
 
+        #if plot_items:
+        edges = reorder_list(edges, var_dist, "edges")
+        a_unknown = {}
+        n2 = 0
+        for e in edges:  # Strip src, dest from pv
+            e.pv = e.pv[:n_bins]
+            if e.asn_from == "unknown" and e.n_from not in a_unknown:
+                a_unknown[e.n_from] = 2;  n2 += 1
+            if e.asn_to == "unknown" and e.n_to not in a_unknown:
+                a_unknown[e.n_to] = 2;  n2 += 1
+        print("%d unknown asns found <<<" % n2)
+        make_edge_plot_labels(msm_id, edges)
         if plot_items:
-            edges = reorder_list(edges, var_dist)
-            a_unknown = {}
-            n2 = 0
-            for e in edges:  # Strip src, dest from pv
-                e.pv = e.pv[:n_bins]
-                if e.asn_from == "unknown" and e.n_from not in a_unknown:
-                    a_unknown[e.n_from] = 2;  n2 += 1
-                if e.asn_to == "unknown" and e.n_to not in a_unknown:
-                    a_unknown[e.n_to] = 2;  n2 += 1
-            print("%d unknown asns found <<<" % n2)
-            make_edge_plot_labels(msm_id, edges)
             plot_bars("Edge Variance", msm_id, edges[0:34], 
                 pplt.get_cmap('RdBu'), 0)
 
-            if len(a_unknown) != 0:
-                ua_unknown_f = open(c.all_unknown_nodes_fn(), 'a')
-                for nk in a_unknown:
-                    if a_unknown[nk] == 2:
-                        ua_unknown_f.write(nk+"\n")
-                ua_unknown_f.close()
+        if len(a_unknown) != 0:
+            ua_unknown_f = open(c.all_unknown_nodes_fn(), 'a')
+            for nk in a_unknown:
+                if a_unknown[nk] == 2:
+                    ua_unknown_f.write(nk+"\n")
+            ua_unknown_f.close()
 
     if sr_presence:  # Check SubRoot presence (for bar plots)
         def ev_dist(pv1, pv2):  # Clustering distance metric
@@ -768,7 +751,7 @@ for msm_id in reqd_msms:
                 ax.step(np.arange(0,n_bins), yv, where="mid",
                     color=colours[cn], label=str(reqd_msms[n]))
             ax.legend(loc="lower right", title="msm_id", frameon=False)
-            pfn = "%s/dest-incounts.pdf" % c.start_ymd
+            pfn = "%s/dest-incounts.svg" % c.start_ymd
             print("save to %s" % pfn)
             pplt.savefig(pfn)
 
@@ -814,7 +797,7 @@ for msm_id in reqd_msms:
             #ax.legend(loc="lower right", title="Node Name", 
             ax.legend(title="Node Name",  loc="center left",
                 bbox_to_anchor=(1.05,0.5), prop={"size":10}, frameon=False)
-            pfn = "%s/hop-%d-%s-incounts-%s.pdf" % (
+            pfn = "%s/hop-%d-%s-incounts-%s.svg" % (
                 c.start_ymd, depth, dest, msm_id)
             print("save to %s" % pfn)
             pplt.savefig(pfn)
@@ -834,7 +817,38 @@ for msm_id in reqd_msms:
         #if plot_items:
         #    plot_hop_n_incounts(d2_yval_array, d2_node_names, d2_dest, 2)
 
-if plot_items and (n_presence or e_presence):
+countsf = open("counts.txt", "w")
+countsf.write("presence-bars counts: %s, %s, mn_trpkts %d\n\n" % (
+    reqd_ymds, reqd_msms, mn_trpkts))
+countsf.write("n_min %d, d_min %d, e_min %d\n\n" % (n_min, d_min, e_min))
+
+countsf.write("Found objects\n")
+countsf.write("%s\n" % ymc[0].hdr())
+for ymo in ymc:
+    countsf.write("%s\n" % ymo.f_row())
+countsf.write("\n")
+
+countsf.write("Non-stable objects\n")
+countsf.write("%s\n" % ymc[0].hdr())
+for ymo in ymc:
+    countsf.write("%s\n" % ymo.ns_row())
+countsf.write("\n")
+
+countsf.write("Classified objects\n")
+countsf.write("%s\n" % ymc[0].hdr())
+for ymo in ymc:
+    countsf.write("%s\n" % ymo.c_row())
+countsf.write("\n")
+
+countsf.write("Interesting objects\n")
+countsf.write("%s\n" % ymc[0].hdr())
+for ymo in ymc:
+    countsf.write("%s\n" % ymo.i_row())
+countsf.write("\n")
+
+countsf.close()
+
+if (len(n_lines) + len(d_lines) + len(e_lines)) != 0:  # Write summary file !!!
     asn_prefix = ""
     if asn_graphs:
         asn_prefix = "ASN-"
@@ -847,37 +861,30 @@ if plot_items and (n_presence or e_presence):
         option_str += "_e"
     summary_file = open("%s/%sgraphs%s-summary.txt" % (
         reqd_ymds[0], asn_prefix, option_str), "w")
-    summary_file.write("Presence summary for %sgraphs on %s\n\n" % (
-        asn_prefix, reqd_ymds[0]))
+    summary_file.write(
+        "Presence summary for %sgraphs on %s (mn_trpkts = %d)\n\n" % (
+            asn_prefix, reqd_ymds[0], mn_trpkts))
     if n_presence:
         summary_file.write(
             "Nodes (min 'interesting' count = %d)\n" % n_min)
         for line in n_lines:
             summary_file.write(line)
+        summary_file.write("\n")
+    if dn_presence:
+        summary_file.write(
+            "Distal Nodes (min 'interesting' count = %d)\n" % d_min)
+        for line in d_lines:
+            summary_file.write(line)
+        summary_file.write("\n")
     if e_presence:
-        if n_presence:
-            summary_file.write("\n")
         summary_file.write(
             "Edges (min 'interesting' count = %d)\n" % e_min)
         for line in e_lines:
             summary_file.write(line)
-    summary_file.write("\n")
+        summary_file.write("\n")
     summary_file.close()
 
-
 '''
-            icount = 0
-            for pn in in_edges:
-                icount += in_edges[pn]
-            counts_at_depths[depth] += icount
-            if depth != 15:
-                for pn in in_edges:
-                    #print(">>> pn = %s (%s)" % (pn, type(pn)))
-                    if pn in nodes:  # May have been pruned
-                        prev_hop(depth+1, nodes[pn], bn)
-            return
-        
-
     ng = True;  ea = []
     for r in range(0, len(Z)):  # Print linkage matrix
         #print("%3d:  %3d %3d  %6.3f  %3d (%3d)  <%s + %d = %d>" % (r,

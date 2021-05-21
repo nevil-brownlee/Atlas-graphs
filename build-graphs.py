@@ -18,6 +18,7 @@ import dgs_ld
 from pytz import timezone
 from datetime import timedelta
 import gzip, os, string, re, sys
+from timeit import default_timer as timer
 
 import config as c
 
@@ -107,6 +108,7 @@ start_dt = end_dt = None
 
 def read_json_file(zif, start_dt, tb_n):
         # tb_n = starting bin nbr within whole dataset (i.e. set of days)
+    n_bins = 0;  tot_bin_times = 0.0
     f_tb_n = 0  # starting bin nbr within output file
     n_traces = 0
     ln = -1
@@ -158,9 +160,12 @@ def read_json_file(zif, start_dt, tb_n):
                         # Remove rfc1918 and duplicate-responder address
                     print("===  tb=%s, t_traces=%s\n" % (tb, t_traces))
 
+                    start_t = timer()
                     g = graph.build_graph(f_tb_n, tb.bins[f_tb_n], dest, \
                         t_traces, t_addrs, t_hops, t_succ, t_addrs_deleted, \
                         t_hops_deleted, c.msm_id, sf)
+                    end_t = timer()
+                    n_bins += 1;  tot_bin_times += (end_t-start_t)
                     bga.append(g)  # bga is global!
 
                     #??? tb.bins[f_tb_n] = None  # Finished with bin f_tb_n
@@ -187,6 +192,9 @@ def read_json_file(zif, start_dt, tb_n):
         b_too_short_traces += too_short_traces
         b_traces += nt
         bga.append(g)
+
+        print("%d graphs produced, %.3f s per bin <<<" % (
+            n_bins, tot_bin_times/n_bins))
         break  # EOF; Break the 'while True' loop
 
     return n_traces, dest, start_dt, end_dt, empty_traces, too_short_traces
