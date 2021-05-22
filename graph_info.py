@@ -1,8 +1,5 @@
 # 1640, Mon 12 Apr 2021 (NZST)
 # 1556, Thu 22 Oct 2020 (NZDT)
-# 1646, Tue 21 Apr 2020 (NZST)
-# 1658, Sun 30 Jun 2019 (NZST)
-# 1802, Thu  1 Mar 2018 (NZDT)
 # 1427, Tue  1 Aug 2017 (NZST)
 #
 #  graphinfo.py: NodeInfo, Edge, Path, SubRoot and GraphInfo classes
