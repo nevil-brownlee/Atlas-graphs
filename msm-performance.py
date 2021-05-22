@@ -1,7 +1,7 @@
 # 1653, Sat 22 May 2021 (NZST)
 # 1626, Wed 18 Dec 2019 (NZDT)
 #
-# msm-performance.py:  Gather performance stats per msm
+# msm-performance.py:  Gather performance stats per msm_id
 #
 # Copyright 2021, Nevil Brownlee,  U Auckland | RIPE NCC
 
