@@ -40,6 +40,7 @@ elif len(reqd_ymds) > 1:
 if len(reqd_msms) == 0:
     reqd_msms = [c.msm_id]
 print("mntr %d, reqd_ymds %s, reqd_msms = %s" % (mn_trpkts, reqd_ymds, reqd_msms))
+c.set_ymd(reqd_ymds[0])
 
 class ASN:
     def __init__(self, asn, address, in_count):

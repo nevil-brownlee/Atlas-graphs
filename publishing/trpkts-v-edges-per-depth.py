@@ -21,7 +21,7 @@ import config as c
 
 reqd_ymds = [];  reqd_msms = []
 pp_names = "y! m!"  # indexes 0 to 1
-pp_ix, pp_values = c.set_pp("")  # Set up config info  (no + parameters)
+pp_ix, pp_values = c.set_pp(pp_names)  # Set up config info
 for n,ix in enumerate(pp_ix):
     if ix == 0:    # y  (yyyymmdd) dates
         reqd_ymds = c.check_ymds(pp_values[n])
@@ -192,7 +192,7 @@ def plot_stacked(msm_objs, msm_dests, inner, bn):  # Plots for timebin bn
     #pplt.show()
     plot_fn = "%s/%s-tr-pkts-v-edges-per-depth.svg" % (start_ymd, which)
     pplt.savefig(plot_fn)
-
+    return plot_fn
 
 msm_objs = []
 bins_to_read = 1  # Only read stats for first bin
@@ -217,5 +217,16 @@ if len(msm_objs) == 0:
 print("--- msm_objs = %s" % msm_objs)
 
 plot_stacked(msm_objs, c.msm_dests, True, 0)  # Inner plot for timebin 0
-plot_stacked(msm_objs, c.msm_dests, False, 0)  # Outer plot for timebin 0
+plot_fn = plot_stacked(msm_objs, c.msm_dests, False, 0)  # Outer plot for timebin 0
+print(">>> plot_fn = %s" % plot_fn)
 #plot_stacked(msm_objs, c.msm_dests, 10)  # Plot timebin 10 only
+
+def run_cmd(cmd):
+    output, rc = c.run_bash_commands(cmd)
+    if rc != 0:
+        print(output)
+    return rc
+
+rt = run_cmd("python3 publishing/tweak-svg-headers.py %s" % plot_fn)
+if rt != 0:
+    print(">>>>> tweak run failed!");  exit()

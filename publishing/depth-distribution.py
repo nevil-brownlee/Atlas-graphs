@@ -118,5 +118,15 @@ for n,msm_id in enumerate(reqd_msms):
     d_subplot(axes[n,0], x[:p_xlim],y[:p_xlim], msm_id)
 
 #pplt.show()
-pplt.savefig("depth_pc.svg")
+plot_fn = "depth_pc.svg"
+pplt.savefig(plot_fn)
  
+def run_cmd(cmd):
+    output, rc = c.run_bash_commands(cmd)
+    if rc != 0:
+        print(output)
+    return rc
+
+rt = run_cmd("python3 publishing/tweak-svg-headers.py %s" % plot_fn)
+if rt != 0:
+    print(">>>>> tweak run failed!");  exit()

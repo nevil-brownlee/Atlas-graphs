@@ -380,6 +380,13 @@ class GraphInfo:
 
     def __init__(self, msm_id, node_dir, n_bins, asn_graph,
             n_asns, no_asn_nodes, mx_allowed_depth, mn_allowed_trpkts):
+        write_ne_data = False  # Write fie of counts
+        if write_ne_data:
+            ne_data = open("%s/%s-ne-data.txt" % (c.start_ymd, msm_id),
+                "w", encoding='utf-8')
+            ne_data.write("ne-data %s/%d\n" % (c.start_ymd, msm_id))
+                # build_graphs only allows a single ymd !!
+            ne_data.write("bn  nodes all_nodes  s_nodes  edges all_edges\n")
         self.msm_id = msm_id
         self.mn_allowed_trpkts = mn_allowed_trpkts
         self.fn = None  # graphs- filename
@@ -395,12 +402,11 @@ class GraphInfo:
         self.stats = {}
         self.p_counts = np.zeros(self.n_bins+1)  # Edges in bins 0..(c.n_bins)
         self.stats['edges_counts'] = self.p_counts
-        self.all_edges = {}  # All edges seen in whole GraphInfo
 
         self.n_traces = np.zeros(self.n_bins)  # Totals from BinGraph lines
         self.stats["n_traces"] = self.n_traces
         self.n_succ_traces = np.zeros(self.n_bins)
-        self.stats["trs_success"] = self.n_succ_traces
+        self.stats["tr_success"] = self.n_succ_traces
         self.n_dup_traces = np.zeros(self.n_bins)
         self.stats["n_dup_traces"] = self.n_dup_traces
         self.t_addrs = np.zeros(self.n_bins)
@@ -411,12 +417,14 @@ class GraphInfo:
         self.stats["t_hops_deleted"] = self.t_hops_deleted
 
         self.dest = ""        # Dest IP address for traces
-        self.all_nodes = {}  # Nodes from Node lines
-        self.sn_nodes = {}  # Nodes from s_nodes lines
         self.distal_nodes = {}  # sn_nodes not in all_nodes
-        self.nodes_tot = np.zeros(self.n_bins)
+        self.sn_nodes = {}    # Nodes from s_nodes lines
+        self.all_s_nodes = {}   # Edges (from s_nodes lines)
+        self.all_edges = {}   # Edges from s_nodes lines
+        self.all_nodes = {}   # Nodes from Node lines
+        self.nodes_tot = np.zeros(self.n_bins)  # nodes per bin
             # All nodes in graph (from s_node_nodes)
-        self.stats["nodes_tot"] = self.nodes_tot
+        self.stats["nodes"] = self.nodes_tot
         self.nodes_distal = np.zeros(self.n_bins)  # Nodes with no s_node lines
         self.stats["nodes_distal"] = self.nodes_distal
         self.nodes_internal = np.zeros(self.n_bins)  # Nodes in s_nodes lines
@@ -444,14 +452,14 @@ class GraphInfo:
 
         self.trs_dest = np.zeros(self.n_bins)  # trs arriving at dest
         self.stats["trpkts_dest"] = self.trs_dest
-        self.stats["asns_tot"] = self.n_asns
+        self.stats["asns"] = self.n_asns
         self.n_subroots = np.zeros(self.n_bins)  # subroots for each bn
         self.stats["subroots"] = self.n_subroots
         self.n_subroot_trs = np.zeros(self.n_bins)
         self.stats["trpkts_subroot"] = self.n_subroot_trs
 
-        self.tot_edges = np.zeros(self.n_bins)  # Nbr of edges
-        self.stats['edges_tot'] = self.tot_edges
+        self.tot_edges = np.zeros(self.n_bins)  # edges per bin
+        self.stats['edges'] = self.tot_edges
         self.bin_same_edges = np.zeros(self.n_bins)
         self.bin_inter_edges = np.zeros(self.n_bins)
         self.stats['edges_same'] = self.bin_same_edges
@@ -492,7 +500,6 @@ class GraphInfo:
             mna_trpkts = mn_allowed_trpkts  # True
         print("   mxa_depth %d, mna_trpkts %d" % (mxa_depth, mna_trpkts))
 
-        nodes_this_bin = {}  #  Nodes found in Node lines
         s_nodes = {}  # Nodes found in s_nodes lines
         trpkts_tot = 0 
         mx_depth_seen = 0;  mx_n_depth_seen = 0
@@ -506,15 +513,27 @@ class GraphInfo:
                     self.tot_edges[bn] = len(self.edges)
                     self.same_asn_edges[bn] = bin_same_edges
                     self.inter_asn_edges[bn] = bin_inter_edges
+                    if write_ne_data:
+                        ne_data.write("%2s %6d %6d  %6d  %6d %6d\n" % (
+                            bn, len(self.nodes), len(self.all_nodes),
+                            len(s_nodes),
+                            len(self.edges), len(self.all_edges)))
+                    #else:
+                    #    print("  ##$$ %d nodes, %d all_nodes,  %d s_nodes,  %d edges  %d all_edges" % (
+                    #        len(self.nodes), len(self.all_nodes), len(s_nodes), len(self.edges), len(self.all_edges)))
+
                     self.end_bin(msm_id, bn)
-                    self.nodes_tot[bn] = len(s_nodes)
+                    #!!!self.nodes_tot[bn] = len(s_nodes)
+                    self.nodes_tot[bn] = len(self.nodes)
                     if self.trs_dest[bn] != 0:  # Some trpkts reached dest
                         self.nodes_tot[bn] += 1
-                    self.nodes_internal[bn] = len(nodes_this_bin)
+                    self.nodes_internal[bn] = len(self.nodes)
                     ext_nodes = 0
                     for nn in s_nodes:
-                        if nn not in nodes_this_bin:
+                        if nn not in self.nodes:
                             ext_nodes += 1
+                        if nn not in self.all_s_nodes:
+                            self.all_s_nodes[nn] = s_nodes[nn]
                     self.nodes_distal[bn] = ext_nodes
 
                 ila = list(map(int, la[1].split()))
@@ -537,7 +556,7 @@ class GraphInfo:
                 self.nodes = {}  # Dictionary, all nodes seen >> in bin bn <<
                 self.edges = {}  # Ditto for edges (use np arrays for the bins)
                 self.paths = {}  # Ditto for paths
-                trpkts_tot = 0;  s_nodes = {};  nodes_this_bin = {}
+                trpkts_tot = 0;  s_nodes = {}
                 node_lines = n_subroots = n_subroot_trpkts = 0
                 bin_same_edges = bin_inter_edges = 0
                 for r in rla[2:]:  # rla[0] = mx_counts, rla[1] = dest
@@ -593,8 +612,8 @@ class GraphInfo:
                         #    bn, src_name, 
                         #    self.sn_nodes[src_name].icounts.astype(int)))
                 
-                if name not in nodes_this_bin:
-                    nodes_this_bin[name] = True
+                if name not in self.nodes:  # Nodes in this bin
+                    self.nodes[name] = True
                 if name not in self.all_nodes:  # Get info about nodes
                     self.all_nodes[name] = NodeInfo(bn, self.dest, name, 
                         True, self.node_dir, icount, fails, rla, sna,
@@ -621,24 +640,27 @@ class GraphInfo:
                     src = sna[j];  count = int(sna[j+1])
                         # "distal" (probe) nodes only appear in s_nodes lines!
                         # "internal" nodes are sources for nodes nearer to dest
-                    if not src in s_nodes:
-                        s_nodes[src] = True                    
-                    e_key = "%s %s" % (src, name)
-                    in_all_edges = False
-                    if not e_key in self.all_edges:  # Edges in all bins
-                        e = self.all_edges[e_key] = Edge( src, name,
-                            self.node_dir, self.n_bins, asn_graph, 
-                            no_asn_nodes, n_depth)
-                    else:
-                        e = self.all_edges[e_key]
-                        in_all_edges = True
-                    e.set_icount(bn, count)
-                    if e_key not in self.edges:  # Edges in this bin
-                        self.edges[e_key] = e
-                    if e.inter_as:
-                        bin_inter_edges += 1
-                    else:
-                        bin_same_edges += 1
+                    if src in self.nodes:  # Not an s_node
+                            # We only want edges between internal nodes
+                            #   i.e. nodes in this bin's graph
+                        if not src in s_nodes:
+                            s_nodes[src] = True
+                        e_key = "%s %s" % (src, name)
+                        in_all_edges = False
+                        if not e_key in self.all_edges:  # Edges in all bins
+                            e = self.all_edges[e_key] = Edge( src, name,
+                                self.node_dir, self.n_bins, asn_graph, 
+                                no_asn_nodes, n_depth)
+                        else:
+                            e = self.all_edges[e_key]
+                            in_all_edges = True
+                        e.set_icount(bn, count)
+                        if e_key not in self.edges:  # Edges in this bin
+                            self.edges[e_key] = e
+                        if e.inter_as:
+                            bin_inter_edges += 1
+                        else:
+                            bin_same_edges += 1
            
             elif la[0] == "DestGraphs":
                 nv = la[1].split()  # One or more white-space chars
@@ -654,20 +676,43 @@ class GraphInfo:
         self.tot_edges[bn] = len(self.edges)
         self.same_asn_edges[bn] = bin_same_edges
         self.inter_asn_edges[bn] = bin_inter_edges
+        if write_ne_data:
+            ne_data.write("%2s %6d %6d  %6d  %6d %6d\n" % (
+                bn, len(self.nodes), len(self.all_nodes),
+                len(s_nodes),
+                len(self.edges), len(self.all_edges)))
+            ne_data.close()
+        #else:
+        #    print("  ##$$ %d nodes, %d all_nodes,  %d s_nodes,  %d edges  %d all_edges" % (
+        #        len(self.nodes), len(self.all_nodes), len(s_nodes), len(self.edges), len(self.all_edges)))
+
         self.end_bin(msm_id, bn)
-        self.nodes_tot[bn] = len(s_nodes)
+        #!!self.nodes_tot[bn] = len(s_nodes)
+        self.nodes_tot[bn] = len(self.nodes)
         if self.trs_dest[bn] != 0:  # Some trpkts reached dest
             self.nodes_tot[bn] += 1
-        self.nodes_internal[bn] = len(nodes_this_bin)
+        #$self.nodes_internal[bn] = len(nodes_this_bin)
+        self.nodes_internal[bn] = len(self.nodes)
         ext_nodes = 0
         for nn in s_nodes:
-            if nn not in nodes_this_bin:
-                ext_nodes += 1
+            #$if nn not in nodes_this_bin:
+            if nn not in self.nodes:
+                ext_nodes += 1  # Distal nodes in this bin
+            if nn not in self.all_s_nodes:
+                self.all_s_nodes[nn] = s_nodes[nn]
         self.nodes_distal[bn] = ext_nodes
         print("<<< bn %d, %d edges. %d in all_edges" % (
             bn, len(self.edges), len(self.all_edges)))
         print("mx_depth_seen = %d" % mx_depth_seen)
         self.end_bin(msm_id, bn)  # For last bin
+
+        self.ext_nodes_count = 0
+        for sn in self.all_s_nodes:
+            if sn not in self.all_nodes:
+                self.ext_nodes_count += 1
+        print("  ##$$ %d all_nodes, %d ext_nodes_count, %d all_edges $$##" % (
+            len(self.all_nodes), self.ext_nodes_count, len(self.all_edges)))
+        # >>> total nodes = len(self.all_nodes) + self.ext_nodes_count <<<
 
         # Delete subroots with max_icount < mn_allowed_trpkts
         if self.mn_allowed_trpkts != 0:
@@ -774,17 +819,18 @@ class GraphInfo:
     def compute_node_stats(self, nodes, mn_trpkts):
         # Returns array of NodeInfo objects
         keep_nodes = [];  n_stable = 0  # stable = present in all bins
-        unk_nodes = [];  # Nodes with no ASN
+        unk_asns = [];  # Nodes with no ASN
         for j,nk in enumerate(nodes):
             n = nodes[nk]
             if n.asn == "unknown":
-                unk_nodes.append(nk)
+                unk_asns.append(nk)
             n.o_key = "%s, %s" % (n.node_asn(n.name), n.name)
 
             n.icounts = np.where(n.icounts < mn_trpkts, 0, n.icounts)
             n.present = np.not_equal(n.icounts, 0).astype(int)
             n.n_ones = np.count_nonzero(n.icounts)
-            if n.n_ones == n.n_bins:
+            #if n.n_ones == n.n_bins:
+            if n.n_ones >= n.n_bins-1:
                 n_stable += 1
                 continue  # Not interested in stable nodes
             elif n.n_ones != 0:
@@ -813,17 +859,19 @@ class GraphInfo:
                 if n.mx_orun > c.n_bins/4 and \
                         n.n_zruns >= 1 and n.n_oruns >= n.n_zruns:
                     keep_nodes.append(n)
-        return keep_nodes, unk_nodes, n_stable
+        return len(self.all_nodes) + self.ext_nodes_count, \
+            keep_nodes, n_stable, unk_asns
+            #  ext_nodes_count is the number of s_nodes _not_ in self.all_nodes
 
     def compute_edge_stats(self, edges, mn_trpkts):
         keep_edges = [];  e_stable = 0  # stable = present in all bins
-        unk_edges = [];  # Edge end-points with no ASN
+        unk_asns = [];  # Edge end-points with no ASN
         for ek in edges:
             e = self.all_edges[ek]
             if e.asn_from == "unknown" and e.n_from not in a_unknown:
-                unk_edges.append(e.n_from)
+                unk_asns.append(e.n_from)
             if e.asn_to == "unknown" and e.n_to not in a_unknown:
-                unk_edges.append(e.n_to)
+                unk_asns.append(e.n_to)
             if self.asn_graph:  # Node names are ASNs
                 e.o_key = "%s->%s" % (e.n_from, e.n_to)
             else:
@@ -871,7 +919,8 @@ class GraphInfo:
 
         print("compute_edge_stats: returns %d edges, e_stable = %d" % (
             len(keep_edges), e_stable))
-        return keep_edges, unk_edges, e_stable
+        return len(self.all_edges) + self.ext_nodes_count, \
+            keep_edges, e_stable, unk_asns
         
     def examine_subroots(self):  # For presence-bars-v-timebins.py
         self.sub_roots = []

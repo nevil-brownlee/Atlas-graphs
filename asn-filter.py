@@ -40,7 +40,7 @@ if not c.full_graphs:
 if len(reqd_ymds) > 1:
     print("asn-filter.py only handles one ymd <<<")
     exit()
-c.start_ymd = reqd_ymds[0]
+c.set_ymd(reqd_ymds[0])
 
 class E_ASN:  # ASN where edges end
     types = ['normal', 'sub-root', 'root']

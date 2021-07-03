@@ -182,6 +182,7 @@ def plot_asn_counts(ymda, msma, gfa):  # Plot counts (nbr of times pc[x] was see
             # fontsize for labels, "size" for heading
         xy.grid()
     pplt.savefig(pfn)
+    return pfn
 
 #               0        1      2               3       4
 colours = ['black', 'brown', 'red',   'darkorange', 'gold',
@@ -260,6 +261,7 @@ def plot_3d_asn_edges(ymda, msma, gfa):  # Scatter plots of asn counts
         pplt.suptitle(fn)
         pplt.savefig(fn)
         #pplt.show()
+        return None
 
 def plot_asn_edges_v_depth(ymda, msma, gfa, pl):
     # pl is a list of depths to use
@@ -381,3 +383,13 @@ plot_asn_edges_v_depth(ymda, msma, gfa, [47,48])  # Fig 4,depth for ASN edges
 #plot_asn_edges_v_depth(ymda, msma, gfa, [1,2,3,4,5,6])
 #plot_asn_edges_v_depth(ymda, msma, gfa, [23,24,25])
 
+
+def run_cmd(cmd):
+    output, rc = c.run_bash_commands(cmd)
+    if rc != 0:
+        print(output)
+    return rc
+
+rt = run_cmd("python3 publishing/tweak-svg-headers.py %s" % plot_fn)
+if rt != 0:
+    print(">>>>> tweak run failed!");  exit()

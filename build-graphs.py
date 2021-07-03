@@ -39,6 +39,7 @@ elif len(reqd_ymds) > 1:
 if len(reqd_msms) == 0:
     reqd_msms = [c.msm_id]
     print("reqd_ymds %s, reqd_msms %s" % (reqd_ymds, reqd_msms))
+c.set_ymd(reqd_ymds[0])
 
 def add_to_dict(ip_pref, dict):
     if ip_pref in dict:

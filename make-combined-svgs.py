@@ -55,6 +55,7 @@ if mn_trpkts < 0:
     exit()
 print("asn_graphs %s, c.full_graphs %s, mntr %d, mxd %d" % (
     asn_graphs, c.full_graphs, mn_trpkts, mx_depth))
+c.set_ymd(reqd_ymds[0])
 
 class WholeGraph:
     node_f = None

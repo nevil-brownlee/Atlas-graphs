@@ -18,6 +18,7 @@ for n,ix in enumerate(pp_ix):
         reqd_ymds = c.check_ymds(pp_values[n])
     else:
         exit()
+c.set_ymd(reqd_ymds[0])
 
 print("pp_names >%s<, start_ymd %s, msm_id %d, n_bins %d" % (
     pp_names, c.start_ymd, c.msm_id, c.n_bins))

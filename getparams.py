@@ -37,13 +37,14 @@ class AgParams:  # Atlas graph Parameters
         self.params_fn = dir + "/params.txt"
         print("self.params_fn = %s" % self.params_fn)
         try:
-            opts, args = getopt.gnu_getopt(sys.argv[1:], "y:h:n:d:m:f:s:r:",
+            opts, args = getopt.gnu_getopt(sys.argv[1:], "y:h:n:d:m:f:s:",
                 # gnu handling stops parse at first non-matching arg,
                 #   or first arg starting with '+'
                 ["start_ymd=", "start_hhmm=", "n_bins=", "n_days=",
                  "msm_nbr=",
                  "full_graphs=", "write_stats=",
                  "help"])
+            #print("opts >%s<, args >%s<" % (opts, args))
         except getopt.GetoptError as err:
             # print help information and exit:
             print(str(err))  # will print something like "option -a not recognized"
@@ -131,6 +132,8 @@ class AgParams:  # Atlas graph Parameters
                 pp_names.append(pv);  values_reqd.append(rqd)
             #print("pp_names >%s<, values_reqd >%s<" % (pp_names, values_reqd))
             x = self.rem_cpx
+            #print("--- rem_cpx = %d, x = %d, len = %d" % (
+            #    self.rem_cpx, x, len(sys.argv)))
             while x != len(sys.argv):
                 arg = sys.argv[x]
                 #print("GP: s %d, arg %s" % (x, arg))

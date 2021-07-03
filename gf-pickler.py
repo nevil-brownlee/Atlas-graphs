@@ -1,9 +1,6 @@
-# 1617, Wed 24 Feb 2021 (NZDT)
-# 1658, Sun 30 Jun 2019 (NZST)
-# 1802, Thu  1 Mar 2018 (NZDT)
-# 1427, Tue  1 Aug 2017 (NZST)
+# 1650, Fri 28 May 2021 (NZST)
 #
-# cum_edge-presence-v-timebins.py: plot cum_edge_presence
+# gf-pickler.py:  Make pickled versions of GraphInfo for + y +m graphs files
 #
 # Copyright 2021, Nevil Brownlee,  U Auckland | RIPE NCC
 
@@ -41,6 +38,7 @@ if len(reqd_ymds) == 0:
 if len(reqd_msms) == 0:
     reqd_msms = [c.msm_id]
 print("reqd_ymds %s, reqd_msms %s" % (reqd_ymds, reqd_msms))
+c.set_ymd(reqd_ymds[0])
 
 #n_bins = 48  # 1 day
 #n_bins = 48*3  # 3 days

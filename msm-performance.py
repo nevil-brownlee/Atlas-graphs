@@ -211,8 +211,8 @@ def print_block(msmida, ymda, desta, instancesa):
 
     print_stat("n_traces", gi_stats)
     if full_stats:
-        print_stat("trs_success", gi_stats)
-    print_stat("trs success (%)", n_traces_pc)
+        print_stat("tr_success", gi_stats)
+    print_stat("tr success (%)", n_traces_pc)
     if v_spaced:
         sf.write("\n")
 
@@ -226,7 +226,7 @@ def print_block(msmida, ymda, desta, instancesa):
     if v_spaced:
         sf.write("\n")
 
-    print_stat("nodes_tot", gi_stats)
+    print_stat("nodes", gi_stats)
     if full_stats:
         print_stat("nodes_distal", gi_stats)
         print_stat("nodes_internal", gi_stats)
@@ -243,10 +243,10 @@ def print_block(msmida, ymda, desta, instancesa):
     if v_spaced:
         sf.write("\n")
 
-    print_stat("asns_tot", gi_stats)
+    print_stat("asns", gi_stats)
     if v_spaced:
         sf.write("\n")
-    print_stat("edges_tot", gi_stats)
+    print_stat("edges", gi_stats)
     if full_stats:
         print_stat("edges_same", gi_stats)
         print_stat("edges_inter", gi_stats)

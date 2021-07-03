@@ -148,6 +148,6 @@ def run_cmd(cmd):
         print(output)
     return rc
 
-rt = run_cmd("python3 tweak-svg-headers.py %s" % svg_fn)
+rt = run_cmd("python3 publishing/tweak-svg-headers.py %s" % svg_fn)
 if rt != 0:
     print(">>>>> tweak run failed!");  exit()

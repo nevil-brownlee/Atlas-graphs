@@ -43,6 +43,7 @@ if len(reqd_msms) == 0:
     reqd_msms = [c.msm_id]
 print("use_enf= %s, reqd_msms = %s, reqd_ymds = %s, r_bins = %s" % (
     use_enf, reqd_msms, reqd_ymds, r_bins))
+c.set_ymd(reqd_ymds[0])
 
 def load_bgp_file(ymd):
     bgp_fn = c.bgp_fn(ymd)  # Find suitable BGP file

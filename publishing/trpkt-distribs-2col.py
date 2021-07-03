@@ -105,5 +105,15 @@ for n,msm_id in enumerate(reqd_msms):
     h_subplot(axes[n,0],axes[n,1], x,y, msm_id, np.argmax(y>=97))
 
 #pplt.show()
-pplt.savefig("in_size_pc.svg")
- 
+plot_fn = "in_size_pc.svg"
+pplt.savefig(plot_fn)
+
+def run_cmd(cmd):
+    output, rc = c.run_bash_commands(cmd)
+    if rc != 0:
+        print(output)
+    return rc
+
+rt = run_cmd("python3 publishing/tweak-svg-headers.py %s" % plot_fn)
+if rt != 0:
+    print(">>>>> tweak run failed!");  exit()

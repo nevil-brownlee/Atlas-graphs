@@ -94,6 +94,7 @@ if len(reqd_ymds) == 0:
 if len(reqd_ymds) > 1:
     print("More than one ymd specified!");  exit()
 print("reqd_ymds = %s, reqd_msms = %s" % (reqd_ymds, reqd_msms))
+c.set_ymd(reqd_ymds[0])
 
 if not (n_presence or e_presence or dn_presence or e_variance or \
         sr_presence or in_to_dest or walk_graph):
@@ -489,16 +490,17 @@ for jm,msm_id in enumerate(reqd_msms):
             exit()
 
         print("summarise_items: %d items, type %s" % (len(items), item_type))
-        oepa = []  # Items for each object
-        i_nodes, i_unknown, i_stable = filter_fn(items, mn_trpkts)
-        print("$szi %d items in gi.all_nodes, %d were stable"
-                ", %d unknown ASNs" % (
-            len(i_nodes), i_stable, len(i_unknown)))
-        ymc[jm].add_found(item_type[0], len(items)+i_stable)
-        ymc[jm].add_non_stable(item_type[0], len(items))
-        ymc[jm].add_classified(item_type[0], len(i_nodes))
 
-        items = reorder_list(i_nodes, diff_fn, "nodes")
+        oepa = []  # Items for each object
+        i_found, i_kept, i_stable, i_unknown = filter_fn(items, mn_trpkts)
+        print("$szi %d items found, %d kept, %d were stable (not kept)"
+                ", %d unknown ASNs" % (
+                    i_found, len(i_kept), i_stable, len(i_unknown)))
+        ymc[jm].add_found(item_type[0], i_found)
+        ymc[jm].add_non_stable(item_type[0], i_found-i_stable)
+        ymc[jm].add_classified(item_type[0], len(i_kept))
+
+        items = reorder_list(i_kept, diff_fn, "nodes")
         for i in items:  # Look for "interesting" nodes
             #print("  %% n = %s (%s)" % (n, type(n)))
             i.pv = i.pv[:n_bins]
