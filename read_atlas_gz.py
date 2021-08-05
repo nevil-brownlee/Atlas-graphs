@@ -1,13 +1,13 @@
+# 1631, Mmon 26 Jul 2021 (NZST)
 # 1632, Wed 19 Feb 2020 (NZDT)
 # 1349, Tue 17 Jun 2016 (NZST)
 #
 # read_atlas_gz.py: reads atlas json data from .gz file
 #
-# Copyright 2020, Nevil Brownlee,  U Auckland | RIPE NCC
+# Copyright 2021, Nevil Brownlee,  U Auckland | RIPE NCC
 
-import json, string, sys, copy
+import json, string, sys, copy, ipaddress
 
-import ipp  # From python-libtrace, so we can test for RFC1918 addresses!
 import traceroute as tr
 import timebins
 
@@ -20,7 +20,7 @@ def p_trace(nt, hops):  #IC  in_counts testing
     for hn,h in enumerate(hops):
         for rn,r in enumerate(h.responders):
             marker = ""
-            adr = str(r.ip_addr)
+            adr = str(r.ip_add)
             if adr == t_addr:
                 marker = " <<<"
             if rn == 0:
@@ -50,7 +50,7 @@ def read_tr_file(tb, f_tb_n, j_line, mx_traces):
         #if bin_nbr == 2:
         #    exit()
         dest = "?";  empty_traces = too_short_traces = 0
-        dest = ipp.from_s(pr['dst_addr'])
+        dest = ipaddress.ip_address(pr['dst_addr'])
         #print("=== nt=%d, f_tb_n=%d, msm_id=%d, probe_id=%d, src=%s, ts=%d, >bin_nbr %d<, dest=%s, proto=%s" %(
         #    nt, f_tb_n, msm_id, prb_id, pr['src_addr'], ts, bin_nbr, dest,  pr['proto']))
 
@@ -71,10 +71,11 @@ def read_tr_file(tb, f_tb_n, j_line, mx_traces):
             res = h['result'];  rx = 0
             while rx < len(res):  # Packets in Hop
                 p = res[rx]
-                #print("p = %s" % p)
+                #print("@@ 1: p = %s" % p)
                 addr = rtt = None
                 if 'from' in p:  # From address?
-                    addr = ipp.from_s(p['from'])
+                    addr = ipaddress.ip_address(p['from'])
+                    #print("@@ 2: addr = %s (%s)" % (addr, type(addr)))
                     if 'late' in p and rx < len(res)-1:
                         np = res[rx+1]
                         if 'x' in np:  # 'from' followed by 'x'
@@ -94,7 +95,7 @@ def read_tr_file(tb, f_tb_n, j_line, mx_traces):
                     #    rtt = p['x'].encode('ascii','replace')
                     loss += 1
                 if addr:
-                    if addr in resp_d:  # IPprefixes _are_ hashable
+                    if addr in resp_d:
                         resp_d[addr].rtts.append(rtt)
                     else:
                         resp_d[addr] = tr.Responder(addr, [rtt])
@@ -156,11 +157,12 @@ def cleanup_trace(t, tn):  # tn = index in bin
         # Remove rfc_1918 responders in last hop
         d_dups = [];  d_addrs = []
         if len(t.hops) > 0:
-            #sys.stdout.write("--1: ")  #py3
             #t.print_trace()
             for n,dr in enumerate(t.hops[-1].responders):
-                if dr.ip_addr.is_rfc1918:
-                    d_dups.append(-1);  d_addrs.append(str(dr.ip_addr))
+                # if dr.ip_addr.is_rfc1918:  << using plt / python-libtrace
+                dr_ipa = ipaddress.ip_address(dr.ip_addr)
+                if dr_ipa.is_private:
+                    d_dups.append(-1);  d_addrs.append(str(dr_ipa))
                     n_1918_deleted += 1
             for j in range(len(d_dups)):
                 t.hops[-1].responders.pop(d_dups[j])
@@ -171,10 +173,13 @@ def cleanup_trace(t, tn):  # tn = index in bin
             dra = t.hops[hx+1].responders  # Responders for this hop (hx+1)
             s_dups = [];  s_addrs = []
             for dr in dra:
+                dr_ipa = ipaddress.ip_address(dr.ip_addr)
                 for x,sr in enumerate(sra):
-                    if sr.ip_addr.is_rfc1918:
+                    # if sr.ip_addr.is_rfc1918: << using plt / python-libtrace
+                    sr_ipa = ipaddress.ip_address(sr.ip_addr)
+                    if sr_ipa.is_private:
                         n_1918_deleted += 1
-                    if sr.ip_addr == dr.ip_addr or sr.ip_addr.is_rfc1918:
+                    if sr_ipa == dr_ipa or sr_ipa.is_private:
                         if not str(sr.ip_addr) in s_addrs:
                             s_dups.append(x);  s_addrs.append(str(sr.ip_addr))
             total_addrs += len(dra)

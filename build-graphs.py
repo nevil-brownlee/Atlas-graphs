@@ -133,7 +133,6 @@ def read_json_file(zif, start_dt, tb_n):
                     tb = timebins.TimeBins(lsa[3], end_dt)
                     print("tb = >%s<" % tb)
                 continue
-
             ta, nt, bin_nbr, dest, empty_traces, too_short_traces = \
                 read_atlas_gz.read_tr_file(tb, f_tb_n, j_line, mx_traces)
                 # Read the Trees into tb.bins[f_tb_n]

@@ -5,7 +5,6 @@
 # Copyright 2018, Nevil Brownlee,  U Auckland | RIPE NCC
 
 import gzip, re, sys
-import ipp
 
 import traceroute as tr
 import timebins
@@ -83,13 +82,13 @@ class Yaml:
                     return next_nb, ln, name, value, responders
                 if name[-1] == ':':  # Expect !ruby/object:Responder
                     if name != '"":':  # addr's valus has : as last char
-                        ip_address = ipp.from_s(name[0:-1])
+                        ip_address = ipaddress.ip_address(name[0:-1])
                         if ip_address.version != 4:
                                 print("\nIPv6 address @ ln %d  %s" % (ln, addr))
                     else:
                         ip_address = None
                     #try:
-                    #    ip_address = ipp.from_s(name[0:-1])
+                    #    ip_address = ipaddress.ip_address(name[0:-1])
                     #except ValueError:
                     #    print("*** ValueError: name = >%s<, ln = %d" % (name, ln))
                     #    exit()
@@ -174,7 +173,7 @@ class Yaml:
                     #print("??? dest: value = >%s<" % value)
                     dest = None
                     if value and value != '"?"':
-                        dest = ipp.from_s(value)
+                        dest = ipaddress.ip_address(value)
                     if dest and self.dest:
                         if dest != self.dest:
                             print("!!! dest=%s but self.dest=%s, ln=%d" % (

@@ -10,9 +10,15 @@ import traceroute as tr
 import dgs_ld
 ##import ipp
 
-import sys, collections
+import sys, collections, ipaddress
 
 import config as c
+
+#def is_rfc1918(addr):
+#    t = re.match(r'^(?:10|127|172\.(?:1[6-9]|2[0-9]|3[01])|192\.168)\..*', addr)
+#    if t:
+#        return True
+#    return False
 
 debug_self_ref = False
 debug_test_loop = False
@@ -288,7 +294,9 @@ def build_graph(tb_n, traces, g_dest, t_traces, t_addrs, t_hops, t_succ, \
             depth = d - (hx+2)
             for r in t.hops[hx].responders:  # Responders at this depth
                 #print("depth %d, r %s" % (depth, r.ip_addr))
-                if not r.ip_addr.is_rfc1918:
+                #if not r.ip_addr.is_rfc1918:  << using plt / python-libtrace
+                r_ipa =  ipaddress.ip_address(r.ip_addr)
+                if not r_ipa.is_private:
                     if not r.ip_addr in Node.pops:
                         Node.pops[r.ip_addr] = Node(r.ip_addr, depth)
                     else:  # Compute running average depth
@@ -315,7 +323,8 @@ def build_graph(tb_n, traces, g_dest, t_traces, t_addrs, t_hops, t_succ, \
                 #    if not da.is_rfc1918:
                 #        Node.pops[da] = Node(dr.ip_addr, depth)
                 n_rtts = len(dr.rtts)  # Nbr of responses revceived by probe
-                if not da.is_rfc1918:
+                #if not da.is_rfc1918: << using plt / python-libtrace
+                if not da.is_private:
                     for sr in sra:
                         self_ref = incr_src_counts(  # tr packets
                             Node.pops[da], sr.ip_addr, len(sr.rtts))
